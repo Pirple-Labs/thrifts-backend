@@ -62,3 +62,5 @@ group :test do
   gem "selenium-webdriver"
 end
 gem 'faker'
+
+gem "rack-cors", "~> 2.0"
