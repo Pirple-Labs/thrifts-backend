@@ -64,3 +64,4 @@ end
 gem 'faker'
 
 gem "rack-cors", "~> 2.0"
+gem 'kaminari'

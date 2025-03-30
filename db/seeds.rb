@@ -2,7 +2,7 @@ require 'faker'
 
 Product.destroy_all # Clear existing data
 
-10.times do
+200.times do
   Product.create!(
     name: "#{Faker::Commerce.department(max: 1, fixed_amount: true)} #{Faker::Commerce.material}", 
     store_logo: "https://picsum.photos/seed/#{rand(1000)}/100/100",

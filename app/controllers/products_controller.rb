@@ -2,9 +2,10 @@ class ProductsController < ApplicationController
   before_action :set_json_format
 
   def index
-    products = Product.all
-    render json: products, status: :ok
+    products = Product.page(params[:page]).per(params[:limit])
+    render json: products
   end
+  
 
   private
 
