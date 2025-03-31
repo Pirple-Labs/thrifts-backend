@@ -65,3 +65,8 @@ gem 'faker'
 
 gem "rack-cors", "~> 2.0"
 gem 'kaminari'
+
+
+gem "devise-jwt", "~> 0.12.1"
+
+gem "omniauth-google-oauth2", "~> 1.2"
