@@ -1,6 +1,9 @@
 # frozen_string_literal: true
 
 Devise.setup do |config|
+  # Load environment variables
+  require "dotenv/load"
+
   # Mailer Configuration
   config.mailer_sender = 'please-change-me@example.com'
 
@@ -41,4 +44,7 @@ Devise.setup do |config|
     jwt.revocation_requests = [['DELETE', %r{^/logout$}]]
     jwt.expiration_time = 1.day.to_i # Token expires in 24 hours
   end
+
+  # === Google OAuth2 Authentication ===
+  config.omniauth :google_oauth2, ENV['GOOGLE_CLIENT_ID'], ENV['GOOGLE_CLIENT_SECRET'], scope: 'email,profile'
 end

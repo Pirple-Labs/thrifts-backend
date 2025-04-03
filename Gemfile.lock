@@ -113,6 +113,9 @@ GEM
       devise (~> 4.0)
       warden-jwt_auth (~> 0.10)
     dotenv (3.1.7)
+    dotenv-rails (3.1.7)
+      dotenv (= 3.1.7)
+      railties (>= 6.1)
     drb (2.2.1)
     dry-auto_inject (1.1.0)
       dry-core (~> 1.1)
@@ -141,6 +144,8 @@ GEM
       raabro (~> 1.4)
     globalid (1.2.1)
       activesupport (>= 6.1)
+    google-id-token (1.4.2)
+      jwt (>= 1)
     hashie (5.0.0)
     i18n (1.14.7)
       concurrent-ruby (~> 1.0)
@@ -437,7 +442,9 @@ DEPENDENCIES
   capybara
   debug
   devise-jwt (~> 0.12.1)
+  dotenv-rails
   faker
+  google-id-token (~> 1.4)
   importmap-rails
   jbuilder
   kamal

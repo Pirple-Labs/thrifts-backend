@@ -70,3 +70,6 @@ gem 'kaminari'
 gem "devise-jwt", "~> 0.12.1"
 
 gem "omniauth-google-oauth2", "~> 1.2"
+gem 'dotenv-rails'
+
+gem "google-id-token", "~> 1.4"
