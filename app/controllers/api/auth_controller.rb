@@ -1,12 +1,29 @@
 class Api::AuthController < ApplicationController
-  skip_before_action :verify_authenticity_token 
+  skip_before_action :verify_authenticity_token
   require 'jwt'
-  require 'google-id-token'  # ✅ Import Google ID Token verifier
+  require 'google-id-token'
 
+  # 🔐 Manual Email + Password Login
+  def manual_login
+    user = User.find_by(email: params[:email])
+
+    # Use Devise's valid_password? method to authenticate
+    if user&.valid_password?(params[:password])
+      # Generate JWT token
+      token = generate_jwt(user)
+      
+      # Send user and token in the response
+      render json: { user: user, token: token }, status: :ok
+    else
+      render json: { error: 'Invalid credentials' }, status: :unauthorized
+    end
+  end
+  
+
+  # 🔐 Google OAuth Login
   def google_login
-    Rails.logger.info "Received Google Auth Request: #{params.inspect}" # Debugging Log
+    Rails.logger.info "Received Google Auth Request: #{params.inspect}"
 
-    # ✅ Verify Google ID token
     validator = GoogleIDToken::Validator.new
     begin
       payload = validator.check(params[:id_token], ENV['GOOGLE_CLIENT_ID'])
@@ -21,11 +38,10 @@ class Api::AuthController < ApplicationController
 
     Rails.logger.info "Google Token Verified: #{payload.inspect}"
 
-    # ✅ Extract user info from verified Google payload
     user_info = {
       email: payload['email'],
       name: payload['name'],
-      google_id: payload['sub'], # Google’s unique user ID
+      google_id: payload['sub'],
       avatar: payload['picture']
     }
 
@@ -35,7 +51,7 @@ class Api::AuthController < ApplicationController
       user.name = user_info[:name]
       user.google_id = user_info[:google_id]
       user.avatar = user_info[:avatar]
-      user.password = Devise.friendly_token[0, 20]  # ✅ Generate a random secure password
+      user.password = Devise.friendly_token[0, 20]
       user.save!
       Rails.logger.info "New user created: #{user.inspect}"
     else
@@ -51,8 +67,26 @@ class Api::AuthController < ApplicationController
     render json: { error: e.record.errors.full_messages }, status: :unprocessable_entity
   end
 
+  # 🔐 User Sign Up
+  def signup
+    user = User.new(signup_params)
+
+    if user.save
+      token = generate_jwt(user)
+      render json: { user: user, token: token }
+    else
+      render json: { error: user.errors.full_messages }, status: :unprocessable_entity
+    end
+  end
+
   private
 
+  # Strong Parameters for Signup
+  def signup_params
+    params.require(:user).permit(:email, :password, :password_confirmation, :name)
+  end
+
+  # Generate JWT for authenticated user
   def generate_jwt(user)
     payload = { user_id: user.id, exp: 24.hours.from_now.to_i }
     JWT.encode(payload, Rails.application.credentials.secret_key_base)
