@@ -2,10 +2,12 @@ class ProductsController < ApplicationController
   before_action :set_json_format
 
   def index
-    products = Product.page(params[:page]).per(params[:limit])
+    # Randomize the products order using "RANDOM()"
+    products = Product.order("RANDOM()").page(params[:page]).per(params[:limit])
+
+    # Render the products as JSON
     render json: products
   end
-  
 
   private
 
