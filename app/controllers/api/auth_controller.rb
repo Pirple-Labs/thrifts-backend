@@ -1,5 +1,6 @@
 class Api::AuthController < ApplicationController
   skip_before_action :verify_authenticity_token
+  skip_before_action :authenticate_user!, only: [:manual_login, :google_login, :signup]
   require 'jwt'
   require 'google-id-token'
 

@@ -6,14 +6,21 @@ Rails.application.routes.draw do
   }
 
   # API Namespace
-  namespace :api do
-    # Google OAuth authentication
+ namespace :api, defaults: { format: :json } do
+
+    # Google OAuth & manual login
     post 'auth/manual_login', to: 'auth#manual_login'
     post 'auth/google_login', to: 'auth#google_login'
-    # Sign-up route for manual email/password sign-up
     post 'auth/signup', to: 'auth#signup'
+
+    # 🛍️ Shop creation route
+    resources :shops, only: [:create]
+    resources :products, only: [:index]
+    resources :wishlist_items, only: [:create]
+    delete 'wishlist_items', to: 'wishlist_items#destroy'
+
   end
 
-  # Product Routes
-  resources :products, only: [:index]
+  # Product Routes (legacy, not namespaced)
+  
 end
