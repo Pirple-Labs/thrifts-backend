@@ -1,24 +1,30 @@
 require 'faker'
 
-Product.destroy_all # Clear existing data
+# Create one dummy user and shop for association
+user = User.create!(email: "testexample@gmail.com", password: "password123")
+shop = user.shops.create!(
+  name: "Sample Shop",
+  phone: "0712345678",
+  location: "Nairobi",
+  image_url: "https://picsum.photos/seed/shop/200/200",
+  description: "A demo shop",
+  pickup_agent: true,
+  agreed: true
+)
+# Seed 100 products
+10.times do
+  image_urls = Array.new(3) { "https://picsum.photos/seed/#{rand(1000..9999)}/300/300" }
 
-conditions = ["New", "Like New", "Used", "Refurbished"]
-brands = ["Nike", "Adidas", "Zara", "Samsung", "Apple", "Sony", "H&M", "Gucci", "Dell", "Canon"]
-payment_methods = ["M-Pesa", "Credit Card", "Cash on Delivery", "PayPal"]
-delivery_modes = ["Pick-up", "Home Delivery", "Courier Service"]
-
-200.times do
   Product.create!(
-    name: "#{Faker::Commerce.department(max: 1, fixed_amount: true)} #{Faker::Commerce.material}", 
-    store_logo: "https://picsum.photos/seed/#{rand(1000)}/100/100",
-    product_image: "https://picsum.photos/seed/#{rand(1000..9999)}/300/300",
-    price: Faker::Commerce.price(range: 10.0..100.0, as_string: true),
-    description: Faker::Marketing.buzzwords,
-    condition: conditions.sample,
-    brand: brands.sample,
-    payment: payment_methods.sample,
-    mode_of_delivery: delivery_modes.sample
+    name: Faker::Commerce.product_name,
+    product_image: image_urls.first,
+    product_images: image_urls,
+    price: Faker::Commerce.price(range: 1000.0..15000.0),
+    description: Faker::Lorem.paragraph(sentence_count: 2),
+    views: rand(1..500),
+    shop: shop,
+    
   )
 end
 
-puts "✅ Seeded #{Product.count} products with full info!"
+puts "✅ Seeded #{Product.count} products linked to '#{shop.name}'"

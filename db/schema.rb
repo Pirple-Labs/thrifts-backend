@@ -10,9 +10,37 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_05_22_091701) do
+ActiveRecord::Schema[8.0].define(version: 2025_06_12_070718) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
+
+  create_table "brands", force: :cascade do |t|
+    t.string "name", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "cart_items", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.bigint "product_id", null: false
+    t.integer "quantity", default: 1
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["product_id"], name: "index_cart_items_on_product_id"
+    t.index ["user_id"], name: "index_cart_items_on_user_id"
+  end
+
+  create_table "conditions", force: :cascade do |t|
+    t.string "name", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "delivery_modes", force: :cascade do |t|
+    t.string "name", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
 
   create_table "jwt_denylists", force: :cascade do |t|
     t.string "jti", null: false
@@ -22,18 +50,23 @@ ActiveRecord::Schema[8.0].define(version: 2025_05_22_091701) do
     t.index ["jti"], name: "index_jwt_denylists_on_jti", unique: true
   end
 
+  create_table "payment_methods", force: :cascade do |t|
+    t.string "name", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
   create_table "products", force: :cascade do |t|
     t.string "name"
-    t.string "store_logo"
-    t.string "product_image"
+    t.string "main_image"
     t.decimal "price"
     t.text "description"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.string "condition"
-    t.string "brand"
-    t.string "payment"
-    t.string "mode_of_delivery"
+    t.integer "views"
+    t.bigint "shop_id", null: false
+    t.jsonb "supplementary_images"
+    t.index ["shop_id"], name: "index_products_on_shop_id"
   end
 
   create_table "shops", force: :cascade do |t|
@@ -42,6 +75,11 @@ ActiveRecord::Schema[8.0].define(version: 2025_05_22_091701) do
     t.bigint "user_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "phone"
+    t.string "location"
+    t.string "pickup_agent"
+    t.boolean "agreed"
+    t.string "store_logo_url"
     t.index ["user_id"], name: "index_shops_on_user_id"
   end
 
@@ -76,6 +114,9 @@ ActiveRecord::Schema[8.0].define(version: 2025_05_22_091701) do
     t.index ["user_id"], name: "index_wishlist_items_on_user_id"
   end
 
+  add_foreign_key "cart_items", "products"
+  add_foreign_key "cart_items", "users"
+  add_foreign_key "products", "shops"
   add_foreign_key "shops", "users"
   add_foreign_key "wishlist_items", "products"
   add_foreign_key "wishlist_items", "users"

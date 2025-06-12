@@ -2,7 +2,7 @@ class User < ApplicationRecord
   # Associations
   has_many :shops, dependent: :destroy
   has_many :wishlist_items, dependent: :destroy
-
+  has_many :cart_items, dependent: :destroy
   # Role management
   # enum role: { user: 0, merchant: 1, admin: 2 }
 
@@ -10,7 +10,7 @@ class User < ApplicationRecord
   devise :database_authenticatable, :registerable,
          :recoverable, :rememberable, :validatable,
          :jwt_authenticatable,
-         :confirmable,
+        #  :confirmable,
          jwt_revocation_strategy: JwtDenylist
 
   # Callback (optional safety)
