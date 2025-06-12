@@ -57,4 +57,8 @@ Rails.application.configure do
 
   # Raise if a controller callback references a missing action
   config.action_controller.raise_on_missing_callback_actions = true
+
+  config.action_dispatch.cookies_same_site_protection = :none
+
+
 end
