@@ -6,24 +6,24 @@ shop = user.shops.create!(
   name: "Sample Shop",
   phone: "0712345678",
   location: "Nairobi",
-  image_url: "https://picsum.photos/seed/shop/200/200",
+  store_logo_url: "https://picsum.photos/seed/shop/200/200", # corrected field
   description: "A demo shop",
   pickup_agent: true,
   agreed: true
 )
-# Seed 100 products
+
+# Seed 10 products
 10.times do
   image_urls = Array.new(3) { "https://picsum.photos/seed/#{rand(1000..9999)}/300/300" }
 
   Product.create!(
     name: Faker::Commerce.product_name,
-    product_image: image_urls.first,
-    product_images: image_urls,
+    main_image: image_urls.first,                # main image
+    supplementary_images: image_urls.drop(1),    # additional images
     price: Faker::Commerce.price(range: 1000.0..15000.0),
     description: Faker::Lorem.paragraph(sentence_count: 2),
     views: rand(1..500),
-    shop: shop,
-    
+    shop: shop
   )
 end
 

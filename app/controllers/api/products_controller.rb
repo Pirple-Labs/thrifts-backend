@@ -2,17 +2,24 @@ module Api
   class ProductsController < Api::BaseController
     skip_before_action :authenticate_user!, only: [:index]
 
-    # GET /api/products?page=1
+  # GET /api/products?page=1
     def index
       if current_user.nil? && params[:page].to_i > 2
         render json: { error: "Guest limit reached" }, status: :forbidden
         return
       end
 
-      @products = Product.order("RANDOM()").page(params[:page])
-      render json: @products
+      @products = Product.includes(:shop).order("RANDOM()").page(params[:page])
+
+      render json: @products.as_json(include: {
+        shop: {
+          only: [:id, :name, :store_logo_url]
+        }
+      }, except: [:updated_at])
     end
 
+
+    # POST /api/products
     # POST /api/products
     def create
       shop = current_user.shops.find_by(id: product_params[:shop_id])
@@ -22,9 +29,13 @@ module Api
         return
       end
 
-      product = shop.products.new(product_params.to_h.merge({
-        product_image: product_params[:product_images]&.first # fallback for main image
-      }))
+      product = shop.products.new(
+        name: product_params[:name],
+        price: product_params[:price],
+        description: product_params[:description],
+        main_image: product_params[:main_image],
+        supplementary_images: product_params[:supplementary_images] || [],
+      )
 
       if product.save
         render json: { message: "Product created successfully", product: product }, status: :created
@@ -32,6 +43,9 @@ module Api
         render json: { errors: product.errors.full_messages }, status: :unprocessable_entity
       end
     end
+
+
+ 
 
     private
 
@@ -41,8 +55,10 @@ module Api
         :price,
         :description,
         :shop_id,
-        product_images: [] # permit array of URLs
+        :main_image,                   # ✅ allow string for main_image
+        supplementary_images: []      # ✅ allow array for JSONB column
       )
-    end
+     end
+
   end
 end
