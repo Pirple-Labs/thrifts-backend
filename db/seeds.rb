@@ -1,29 +1,43 @@
 require 'faker'
 
-# Create one dummy user and shop for association
-user = User.create!(email: "testexample@gmail.com", password: "password123")
-shop = user.shops.create!(
+# Create dummy user and shop
+user = User.find_or_create_by!(email: "testexample1@gmail.com") do |u|
+  u.password = "password123"
+end
+
+shop = user.shops.find_or_create_by!(
   name: "Sample Shop",
   phone: "0712345678",
   location: "Nairobi",
-  store_logo_url: "https://picsum.photos/seed/shop/200/200", # corrected field
-  description: "A demo shop",
-  pickup_agent: true,
+  store_logo_url: "https://loremflickr.com/200/200/shop_logo?lock=1",
+  description: "A demo shop with sample products",
+  pickup_agent: "Yes",
   agreed: true
 )
 
-# Seed 10 products
-10.times do
-  image_urls = Array.new(3) { "https://picsum.photos/seed/#{rand(1000..9999)}/300/300" }
+# Optionally seed a few categories if not present
+category_names = ["Clothing", "Electronics", "Books", "Shoes", "Home Decor"]
+categories = category_names.map do |name|
+  Category.find_or_create_by!(name: name)
+end
+
+# Seed 20 products
+20.times do |i|
+  images = [
+    "https://loremflickr.com/300/300/product?lock=#{i}",
+    "https://loremflickr.com/300/300/item?lock=#{i + 100}",
+    "https://loremflickr.com/300/300/shop?lock=#{i + 200}"
+  ]
 
   Product.create!(
     name: Faker::Commerce.product_name,
-    main_image: image_urls.first,                # main image
-    supplementary_images: image_urls.drop(1),    # additional images
+    main_image: images.first,
+    supplementary_images: images.drop(1),
     price: Faker::Commerce.price(range: 1000.0..15000.0),
-    description: Faker::Lorem.paragraph(sentence_count: 2),
-    views: rand(1..500),
-    shop: shop
+    description: Faker::Lorem.sentence(word_count: 12),
+    views: rand(10..1000),
+    shop: shop,
+    category: categories.sample
   )
 end
 

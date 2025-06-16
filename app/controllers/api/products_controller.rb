@@ -4,22 +4,32 @@ module Api
 
   # GET /api/products?page=1
     def index
-      if current_user.nil? && params[:page].to_i > 2
-        render json: { error: "Guest limit reached" }, status: :forbidden
-        return
-      end
+  if current_user.nil? && params[:page].to_i > 2
+    render json: { error: "Guest limit reached" }, status: :forbidden
+    return
+  end
 
-      @products = Product.includes(:shop).order("RANDOM()").page(params[:page])
+  products_query = Product.includes(:shop)
 
-      render json: @products.as_json(include: {
-        shop: {
-          only: [:id, :name, :store_logo_url]
-        }
-      }, except: [:updated_at])
-    end
+  # 🎯 Filter by shop_id if passed (for merchant dashboard)
+  if params[:shop_id].present?
+    products_query = products_query.where(shop_id: params[:shop_id])
+  else
+    products_query = products_query.order("RANDOM()") # 🧍 guest/thrifter browsing
+  end
 
+  paginated_products = products_query.page(params[:page])
 
-    # POST /api/products
+  render json: paginated_products.as_json(
+    include: {
+      shop: {
+        only: [:id, :name, :store_logo_url]
+      }
+    },
+    except: [:updated_at]
+  )
+end
+
     # POST /api/products
     def create
       shop = current_user.shops.find_by(id: product_params[:shop_id])

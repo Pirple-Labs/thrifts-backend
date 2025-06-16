@@ -9,7 +9,16 @@ class Api::ShopsController < Api::BaseController
       render json: { errors: shop.errors.full_messages }, status: :unprocessable_entity
     end
   end
+   # GET /api/shops/my_shop
+  def my_shop
+    shop = current_user.shops.first
 
+    if shop
+      render json: { has_shop: true, shop: shop }, status: :ok
+    else
+      render json: { has_shop: false }, status: :ok
+    end
+  end
   private
 
   def shop_params

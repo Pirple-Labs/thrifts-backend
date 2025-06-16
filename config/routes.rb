@@ -14,6 +14,7 @@ Rails.application.routes.draw do
 
     # 🛍️ Shop & Product routes
     resources :shops, only: [:create]
+    get 'shops/my_shop', to: 'shops#my_shop'
     resources :products, only: [:index, :create]
 
 
