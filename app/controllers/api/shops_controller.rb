@@ -19,6 +19,38 @@ class Api::ShopsController < Api::BaseController
       render json: { has_shop: false }, status: :ok
     end
   end
+
+  # GET /api/shops/:id
+def show_public
+  shop = Shop.find_by(id: params[:id])
+
+  if shop
+    render json: {
+      id: shop.id,
+      name: shop.name,
+      description: shop.description,
+      store_logo_url: shop.store_logo_url,
+      location: shop.location,
+      created_at: shop.created_at
+    }, status: :ok
+  else
+    render json: { error: "Shop not found" }, status: :not_found
+  end
+end
+
+  # GET /api/shops/:id/products
+def products
+  shop = Shop.find_by(id: params[:id])
+
+  if shop
+    products = shop.products.order(created_at: :desc) # Add pagination later if needed
+
+    render json: products.as_json(only: [:id, :name, :price, :description, :images]), status: :ok
+  else
+    render json: { error: "Shop not found" }, status: :not_found
+  end
+end
+
   private
 
   def shop_params

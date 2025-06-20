@@ -17,14 +17,19 @@ Rails.application.routes.draw do
     get 'shops/my_shop', to: 'shops#my_shop'
     resources :products, only: [:index, :create]
 
+    # 🧾 Buyer-facing shop view
+    get 'shops/:id', to: 'shops#show_public'
+    get 'shops/:id/products', to: 'shops#products'
 
     # 💖 Wishlist routes
-    resources :wishlist_items, only: [:create]
+    resources :wishlist_items, only: [:index, :create]
     delete 'wishlist_items', to: 'wishlist_items#destroy'
+    post 'wishlist_items/sync', to: 'wishlist_items#sync'         # <-- ✅ NEW
 
     # 🛒 Cart routes
     resources :cart_items, only: [:index, :create]
-    delete 'cart_items', to: 'cart_items#destroy'          # Remove one item by product_id
-    delete 'cart_items/destroy_all', to: 'cart_items#destroy_all'  # Clear all cart items
+    delete 'cart_items', to: 'cart_items#destroy'
+    delete 'cart_items/destroy_all', to: 'cart_items#destroy_all'
+    post 'cart_items/sync', to: 'cart_items#sync'                 # <-- ✅ NEW
   end
 end
