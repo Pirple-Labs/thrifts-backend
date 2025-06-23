@@ -41,4 +41,59 @@ end
   )
 end
 
-puts "✅ Seeded #{Product.count} products linked to '#{shop.name}'"
+p# Grab user and some products
+user = User.find_by(email: "jessemutua76@gmail.com")
+products = Product.limit(10) # You can adjust this number
+
+# Seed recommended products for the user
+products.each_with_index do |product, index|
+  RecommendedProduct.find_or_create_by!(
+    user: user,
+    product: product
+  ) do |rec|
+    rec.rank = index + 1
+    rec.reason = Faker::Marketing.buzzwords
+  end
+end
+
+puts "✅ Seeded #{products.size} recommended products for #{user.email}"
+# Seed orders and order items
+statuses = ["pending", "shipped", "processing", "delivered"]
+user = User.find_by(email: "jessemutua76@gmail.com")
+products = Product.all.sample(10)
+
+3.times do |i|
+  status = statuses.sample
+  created_time = Faker::Time.backward(days: 30)
+
+  # Create the order
+  order = user.orders.create!(
+    status: status,
+    total_items: 0, # Will be updated below
+    total_price: 0,
+    created_at: created_time,
+    updated_at: created_time
+  )
+
+  total_price = 0
+  total_items = 0
+
+  rand(2..4).times do
+    product = products.sample
+    quantity = rand(1..3)
+    price = product.price
+
+    order.order_items.create!(
+      product: product,
+      quantity: quantity,
+      price: price
+    )
+
+    total_items += quantity
+    total_price += price * quantity
+  end
+
+  order.update!(total_items: total_items, total_price: total_price)
+end
+
+puts "✅ Seeded 3 orders with items for #{user.email}"

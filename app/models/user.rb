@@ -1,8 +1,19 @@
 class User < ApplicationRecord
   # Associations
-  has_many :shops, dependent: :destroy
-  has_many :wishlist_items, dependent: :destroy
-  has_many :cart_items, dependent: :destroy
+has_many :shops, dependent: :destroy
+has_many :products, through: :shops
+
+has_many :wishlist_items, dependent: :destroy
+has_many :wishlist_products, through: :wishlist_items, source: :product
+
+has_many :cart_items, dependent: :destroy
+has_many :cart_products, through: :cart_items, source: :product
+
+has_many :recommended_products, dependent: :destroy
+has_many :recommended_products_list, through: :recommended_products, source: :product
+
+has_many :orders, dependent: :destroy
+has_many :delivery_addresses, dependent: :destroy
   # Role management
   # enum role: { user: 0, merchant: 1, admin: 2 }
 

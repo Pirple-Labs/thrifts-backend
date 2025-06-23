@@ -24,12 +24,21 @@ Rails.application.routes.draw do
     # 💖 Wishlist routes
     resources :wishlist_items, only: [:index, :create]
     delete 'wishlist_items', to: 'wishlist_items#destroy'
-    post 'wishlist_items/sync', to: 'wishlist_items#sync'         # <-- ✅ NEW
+    post 'wishlist_items/sync', to: 'wishlist_items#sync'
 
     # 🛒 Cart routes
     resources :cart_items, only: [:index, :create]
     delete 'cart_items', to: 'cart_items#destroy'
     delete 'cart_items/destroy_all', to: 'cart_items#destroy_all'
-    post 'cart_items/sync', to: 'cart_items#sync'                 # <-- ✅ NEW
+    post 'cart_items/sync', to: 'cart_items#sync'
+
+    # ⭐️ Recommended Products ("Your Picks")
+    get 'picks', to: 'recommended_products#index' 
+
+    # 📦 Orders
+    resources :orders, only: [:index]
+
+    # 📍 Delivery Addresses (Newly added)
+    resources :delivery_addresses, only: [:index, :create, :destroy]
   end
 end

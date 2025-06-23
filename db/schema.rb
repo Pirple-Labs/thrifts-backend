@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_06_16_100631) do
+ActiveRecord::Schema[8.0].define(version: 2025_06_23_095224) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -43,6 +43,17 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_16_100631) do
     t.datetime "updated_at", null: false
   end
 
+  create_table "delivery_addresses", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.string "nickname"
+    t.string "phone"
+    t.string "location"
+    t.string "pickup_agent"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["user_id"], name: "index_delivery_addresses_on_user_id"
+  end
+
   create_table "delivery_modes", force: :cascade do |t|
     t.string "name", null: false
     t.datetime "created_at", null: false
@@ -55,6 +66,27 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_16_100631) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["jti"], name: "index_jwt_denylists_on_jti", unique: true
+  end
+
+  create_table "order_items", force: :cascade do |t|
+    t.bigint "order_id", null: false
+    t.bigint "product_id", null: false
+    t.integer "quantity"
+    t.decimal "price"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["order_id"], name: "index_order_items_on_order_id"
+    t.index ["product_id"], name: "index_order_items_on_product_id"
+  end
+
+  create_table "orders", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.string "status", default: "pending"
+    t.integer "total_items", default: 0
+    t.decimal "total_price", precision: 10, scale: 2, default: "0.0"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["user_id"], name: "index_orders_on_user_id"
   end
 
   create_table "payment_methods", force: :cascade do |t|
@@ -76,6 +108,18 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_16_100631) do
     t.bigint "category_id"
     t.index ["category_id"], name: "index_products_on_category_id"
     t.index ["shop_id"], name: "index_products_on_shop_id"
+  end
+
+  create_table "recommended_products", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.bigint "product_id", null: false
+    t.integer "rank", default: 0
+    t.text "reason"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["product_id"], name: "index_recommended_products_on_product_id"
+    t.index ["user_id", "product_id"], name: "index_recommended_products_on_user_id_and_product_id", unique: true
+    t.index ["user_id"], name: "index_recommended_products_on_user_id"
   end
 
   create_table "shops", force: :cascade do |t|
@@ -125,8 +169,14 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_16_100631) do
 
   add_foreign_key "cart_items", "products"
   add_foreign_key "cart_items", "users"
+  add_foreign_key "delivery_addresses", "users"
+  add_foreign_key "order_items", "orders"
+  add_foreign_key "order_items", "products"
+  add_foreign_key "orders", "users"
   add_foreign_key "products", "categories"
   add_foreign_key "products", "shops"
+  add_foreign_key "recommended_products", "products"
+  add_foreign_key "recommended_products", "users"
   add_foreign_key "shops", "users"
   add_foreign_key "wishlist_items", "products"
   add_foreign_key "wishlist_items", "users"
