@@ -1,17 +1,19 @@
 class Api::ShopsController < Api::BaseController
   # POST /api/shops
-  def create
-    shop = current_user.shops.new(shop_params)
+ # POST /api/shops
+def create
+  shop = current_user.build_shop(shop_params)  # <-- FIXED HERE
 
-    if shop.save
-      render json: { message: "Shop created successfully", shop: shop }, status: :created
-    else
-      render json: { errors: shop.errors.full_messages }, status: :unprocessable_entity
-    end
+  if shop.save
+    render json: { message: "Shop created successfully", shop: shop }, status: :created
+  else
+    render json: { errors: shop.errors.full_messages }, status: :unprocessable_entity
   end
+end
+
    # GET /api/shops/my_shop
   def my_shop
-    shop = current_user.shops.first
+    shop = current_user.shop
 
     if shop
       render json: { has_shop: true, shop: shop }, status: :ok
@@ -38,18 +40,34 @@ def show_public
   end
 end
 
-  # GET /api/shops/:id/products
+
+# GET /api/shops/:id/products
 def products
   shop = Shop.find_by(id: params[:id])
 
   if shop
-    products = shop.products.order(created_at: :desc) # Add pagination later if needed
+    products = shop.products.includes(:shop).order(created_at: :desc)
 
-    render json: products.as_json(only: [:id, :name, :price, :description, :images]), status: :ok
+    render json: products.map { |product|
+      {
+        id: product.id,
+        name: product.name,
+        price: product.price,
+        description: product.description,
+        main_image: product.main_image, # <-- assumes this is a string (URL)
+        supplementary_images: product.supplementary_images, # optional
+        shop: {
+          id: shop.id,
+          name: shop.name,
+          store_logo_url: shop.store_logo_url
+        }
+      }
+    }, status: :ok
   else
     render json: { error: "Shop not found" }, status: :not_found
   end
 end
+
 
   private
 

@@ -1,7 +1,7 @@
 class User < ApplicationRecord
   # Associations
-has_many :shops, dependent: :destroy
-has_many :products, through: :shops
+has_one :shop, dependent: :destroy
+has_many :products, through: :shop
 
 has_many :wishlist_items, dependent: :destroy
 has_many :wishlist_products, through: :wishlist_items, source: :product

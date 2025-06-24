@@ -1,38 +1,35 @@
+# db/seeds.rb
 require 'faker'
 
-# Create dummy user and shop
-user = User.find_or_create_by!(email: "testexample1@gmail.com") do |u|
-  u.password = "password123"
-end
+puts "🌱 Seeding..."
 
-shop = user.shops.find_or_create_by!(
-  name: "Sample Shop",
-  phone: "0712345678",
-  location: "Nairobi",
-  store_logo_url: "https://loremflickr.com/200/200/shop_logo?lock=1",
-  description: "A demo shop with sample products",
-  pickup_agent: "Yes",
-  agreed: true
-)
+# Wipe dependent records only (preserve users and shops)
+OrderItem.destroy_all
+Order.destroy_all
+RecommendedProduct.destroy_all
+Product.destroy_all
+Category.destroy_all
 
-# Optionally seed a few categories if not present
+puts "✅ Cleared orders, products, categories."
+
+# === Seed categories ===
 category_names = ["Clothing", "Electronics", "Books", "Shoes", "Home Decor"]
-categories = category_names.map do |name|
-  Category.find_or_create_by!(name: name)
-end
+categories = category_names.map { |name| Category.find_or_create_by!(name: name) }
+puts "✅ Seeded #{categories.size} categories."
 
-# Seed 20 products
-20.times do |i|
-  images = [
-    "https://loremflickr.com/300/300/product?lock=#{i}",
-    "https://loremflickr.com/300/300/item?lock=#{i + 100}",
-    "https://loremflickr.com/300/300/shop?lock=#{i + 200}"
-  ]
+# === Find merchant ===
+merchant = User.find_by(email: "jessemutua76@gmail.com")
+raise "Merchant not found!" unless merchant
 
+shop = merchant.shop
+raise "Shop for merchant not found!" unless shop
+
+# === Seed products to existing shop ===
+10.times do |i|
   Product.create!(
     name: Faker::Commerce.product_name,
-    main_image: images.first,
-    supplementary_images: images.drop(1),
+    main_image: "https://loremflickr.com/300/300/product?lock=#{i}",
+    supplementary_images: ["https://loremflickr.com/300/300/item?lock=#{i + 100}"],
     price: Faker::Commerce.price(range: 1000.0..15000.0),
     description: Faker::Lorem.sentence(word_count: 12),
     views: rand(10..1000),
@@ -41,42 +38,29 @@ end
   )
 end
 
-p# Grab user and some products
-user = User.find_by(email: "jessemutua76@gmail.com")
-products = Product.limit(10) # You can adjust this number
+puts "✅ Added 10 products to #{shop.name}"
 
-# Seed recommended products for the user
-products.each_with_index do |product, index|
-  RecommendedProduct.find_or_create_by!(
-    user: user,
-    product: product
-  ) do |rec|
-    rec.rank = index + 1
-    rec.reason = Faker::Marketing.buzzwords
-  end
+# === Create dummy buyer ===
+buyer = User.find_or_create_by!(email: "dummybuyer@example.com") do |u|
+  u.password = "password123"
 end
 
-puts "✅ Seeded #{products.size} recommended products for #{user.email}"
-# Seed orders and order items
-statuses = ["pending", "shipped", "processing", "delivered"]
-user = User.find_by(email: "jessemutua76@gmail.com")
-products = Product.all.sample(10)
+# === Simulate orders from buyer to merchant's products ===
+statuses = %w[pending shipped processing delivered]
+products = shop.products.limit(10)
 
-3.times do |i|
-  status = statuses.sample
+10.times do
   created_time = Faker::Time.backward(days: 30)
-
-  # Create the order
-  order = user.orders.create!(
-    status: status,
-    total_items: 0, # Will be updated below
+  order = buyer.orders.create!(
+    status: statuses.sample,
+    total_items: 0,
     total_price: 0,
     created_at: created_time,
     updated_at: created_time
   )
 
-  total_price = 0
   total_items = 0
+  total_price = 0
 
   rand(2..4).times do
     product = products.sample
@@ -90,10 +74,10 @@ products = Product.all.sample(10)
     )
 
     total_items += quantity
-    total_price += price * quantity
+    total_price += quantity * price
   end
 
   order.update!(total_items: total_items, total_price: total_price)
 end
 
-puts "✅ Seeded 3 orders with items for #{user.email}"
+puts "✅ Seeded 3 orders for #{buyer.email} to #{merchant.email}"

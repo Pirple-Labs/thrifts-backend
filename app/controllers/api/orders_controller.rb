@@ -1,6 +1,6 @@
 module Api
-  class OrdersController < ApplicationController
-    before_action :authenticate_user!
+  class OrdersController < Api::BaseController
+    # before_action :authenticate_user!
 
     def index
       orders = current_user.orders

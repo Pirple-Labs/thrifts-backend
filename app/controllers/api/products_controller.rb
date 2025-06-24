@@ -32,12 +32,14 @@ end
 
     # POST /api/products
     def create
-      shop = current_user.shops.find_by(id: product_params[:shop_id])
+    # ✅ This works with has_one :shop
+      shop = current_user.shop
 
-      if shop.nil?
+      if shop.nil? || shop.id.to_s != product_params[:shop_id].to_s
         render json: { error: "Shop not found or not owned by user" }, status: :not_found
         return
       end
+
 
       product = shop.products.new(
         name: product_params[:name],
