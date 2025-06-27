@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_06_23_095224) do
+ActiveRecord::Schema[8.0].define(version: 2025_06_26_174922) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -95,6 +95,19 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_23_095224) do
     t.datetime "updated_at", null: false
   end
 
+  create_table "product_variants", force: :cascade do |t|
+    t.bigint "product_id", null: false
+    t.string "sku"
+    t.string "size"
+    t.string "color"
+    t.integer "stock", default: 0, null: false
+    t.decimal "price_override", precision: 10, scale: 2
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["product_id", "size", "color"], name: "index_product_variants_on_product_id_and_size_and_color", unique: true
+    t.index ["product_id"], name: "index_product_variants_on_product_id"
+  end
+
   create_table "products", force: :cascade do |t|
     t.string "name"
     t.string "main_image"
@@ -106,6 +119,9 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_23_095224) do
     t.bigint "shop_id", null: false
     t.jsonb "supplementary_images"
     t.bigint "category_id"
+    t.string "color"
+    t.string "size"
+    t.integer "stock"
     t.index ["category_id"], name: "index_products_on_category_id"
     t.index ["shop_id"], name: "index_products_on_shop_id"
   end
@@ -173,6 +189,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_23_095224) do
   add_foreign_key "order_items", "orders"
   add_foreign_key "order_items", "products"
   add_foreign_key "orders", "users"
+  add_foreign_key "product_variants", "products"
   add_foreign_key "products", "categories"
   add_foreign_key "products", "shops"
   add_foreign_key "recommended_products", "products"

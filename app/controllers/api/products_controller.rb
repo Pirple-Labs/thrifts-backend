@@ -2,37 +2,45 @@ module Api
   class ProductsController < Api::BaseController
     skip_before_action :authenticate_user!, only: [:index]
 
-  # GET /api/products?page=1
+    # GET /api/products?shop_id=...&page=1&limit=20
     def index
-  if current_user.nil? && params[:page].to_i > 2
-    render json: { error: "Guest limit reached" }, status: :forbidden
-    return
-  end
+      if current_user.nil? && params[:page].to_i > 2
+        render json: { error: "Guest limit reached" }, status: :forbidden
+        return
+      end
 
-  products_query = Product.includes(:shop)
+      products = Product.includes(:shop)
 
-  # 🎯 Filter by shop_id if passed (for merchant dashboard)
-  if params[:shop_id].present?
-    products_query = products_query.where(shop_id: params[:shop_id])
-  else
-    products_query = products_query.order("RANDOM()") # 🧍 guest/thrifter browsing
-  end
+      # Merchant filter
+      if params[:shop_id].present?
+        products = products.where(shop_id: params[:shop_id])
+      else
+        products = products.order("RANDOM()")
+      end
 
-  paginated_products = products_query.page(params[:page])
+      # Optional out-of-stock filter
+      if params[:out_of_stock] == "false"
+        products = products.where("stock > 0")
+      end
 
-  render json: paginated_products.as_json(
-    include: {
-      shop: {
-        only: [:id, :name, :store_logo_url]
+      paginated = products.page(params[:page]).per(params[:limit] || 20)
+
+     render json: {
+        data: paginated.as_json(
+          include: {
+            shop: {
+              only: [:id, :name, :store_logo_url]
+            }
+          },
+          except: [:updated_at]
+        ),
+        page: params[:page].to_i,
+        isLastPage: paginated.next_page.nil?
       }
-    },
-    except: [:updated_at]
-  )
-end
+    end
 
     # POST /api/products
     def create
-    # ✅ This works with has_one :shop
       shop = current_user.shop
 
       if shop.nil? || shop.id.to_s != product_params[:shop_id].to_s
@@ -40,14 +48,7 @@ end
         return
       end
 
-
-      product = shop.products.new(
-        name: product_params[:name],
-        price: product_params[:price],
-        description: product_params[:description],
-        main_image: product_params[:main_image],
-        supplementary_images: product_params[:supplementary_images] || [],
-      )
+      product = shop.products.new(product_params)
 
       if product.save
         render json: { message: "Product created successfully", product: product }, status: :created
@@ -55,9 +56,6 @@ end
         render json: { errors: product.errors.full_messages }, status: :unprocessable_entity
       end
     end
-
-
- 
 
     private
 
@@ -67,10 +65,12 @@ end
         :price,
         :description,
         :shop_id,
-        :main_image,                   # ✅ allow string for main_image
-        supplementary_images: []      # ✅ allow array for JSONB column
+        :main_image,
+        :color,
+        :size,
+        :stock,
+        supplementary_images: []
       )
-     end
-
+    end
   end
 end

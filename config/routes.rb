@@ -7,17 +7,27 @@ Rails.application.routes.draw do
 
   # API Namespace
   namespace :api, defaults: { format: :json } do
-    # 🔐 Authentication
+    # ✅ Categories
+    resources :categories, only: [:index]
+
+    # 🔐 Auth
     post 'auth/manual_login', to: 'auth#manual_login'
     post 'auth/google_login', to: 'auth#google_login'
     post 'auth/signup', to: 'auth#signup'
 
-    # 🛍️ Shop & Product routes
-    resources :shops, only: [:create]
-    get 'shops/my_shop', to: 'shops#my_shop'
+    # 🏪 Shops
+    resources :shops, only: [:create] do
+      collection do
+        get :my_shop                      # /api/shops/my_shop
+      end
+      member do
+        get :show_public                 # /api/shops/:id/show_public
+        get :products_public             # /api/shops/:id/products_public
+      end
+    end
+
+    # 🛍️ Products (merchant/internal use)
     resources :products, only: [:index, :create]
-    get 'shops/:id', to: 'shops#show_public'
-    get 'shops/:id/products', to: 'shops#products'
 
     # 💖 Wishlist
     resources :wishlist_items, only: [:index, :create]
