@@ -27,7 +27,8 @@ Rails.application.routes.draw do
     end
 
     # 🛍️ Products (merchant/internal use)
-    resources :products, only: [:index, :create, :update, :destroy]
+    resources :products, only: [:index, :create, :show, :update, :destroy]
+
 
     # 💖 Wishlist
     resources :wishlist_items, only: [:index, :create]

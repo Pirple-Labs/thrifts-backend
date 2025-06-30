@@ -21,6 +21,14 @@ module Api
       }
     end
 
+    def show
+        product = Product.find(params[:id])
+        render json: { product: product }, status: :ok
+      rescue ActiveRecord::RecordNotFound
+        render json: { error: "Product not found" }, status: :not_found
+      end
+
+
     def create
       product = current_user.shop&.products&.new(product_params.except(:shop_id))
 
