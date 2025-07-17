@@ -1,6 +1,7 @@
 module Api
   class CartItemsController < Api::BaseController
     # `authenticate_user!` is already called in Api::BaseController
+
     def index
       items = current_user.cart_items.includes(:product)
       render json: { items: items.as_json(include: :product) }
@@ -29,7 +30,7 @@ module Api
       end
     end
 
-    # ✅ NEW
+    # ✅ NEW: Sync cart items
     def sync
       items = params[:items]
 
@@ -37,10 +38,8 @@ module Api
         return render json: { success: false, error: "Invalid payload format" }, status: :bad_request
       end
 
-      # Clear current cart
       current_user.cart_items.destroy_all
 
-      # Add new items
       new_items = []
       items.each do |item|
         next unless item[:product_id].present? && item[:quantity].to_i > 0
@@ -56,6 +55,12 @@ module Api
         success: true,
         items: new_items.map { |i| i.as_json(include: :product) }
       }
+    end
+
+    # ✅ NEW: Clear all cart items
+    def destroy_all
+      current_user.cart_items.destroy_all
+      render json: { success: true, message: "Cart cleared" }
     end
   end
 end

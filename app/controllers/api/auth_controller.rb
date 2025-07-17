@@ -1,7 +1,8 @@
-module Api
-  class AuthController <  Api::BaseController
-    skip_before_action :authenticate_user!, only: [:manual_login, :google_login, :signup]
+require 'cloudinary'
 
+module Api
+  class AuthController < Api::BaseController
+    skip_before_action :authenticate_user!, only: [:manual_login, :google_login, :signup]
     require 'google-id-token'
 
     # ✅ Manual Email + Password Login
@@ -29,12 +30,26 @@ module Api
       end
 
       user = User.find_or_initialize_by(email: payload['email'])
+
       if user.new_record?
         user.name = payload['name']
         user.google_id = payload['sub']
-        user.avatar = payload['picture']
         user.password = Devise.friendly_token[0, 20]
         user.save!
+      end
+
+      # ✅ Upload avatar to Cloudinary if still Google-hosted
+      if user.avatar.blank? || user.avatar.include?("googleusercontent")
+        begin
+          upload = Cloudinary::Uploader.upload(
+            payload['picture'],
+            folder: "thrifts/avatars/#{user.id}"
+          )
+          user.update!(avatar: upload["secure_url"])
+        rescue => e
+          Rails.logger.warn("Cloudinary upload failed: #{e.message}")
+          # You can skip or notify but don’t block login for this
+        end
       end
 
       sign_in(user)

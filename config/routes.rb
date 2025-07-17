@@ -7,45 +7,51 @@ Rails.application.routes.draw do
 
   # API Namespace
   namespace :api, defaults: { format: :json } do
-    # ✅ Categories
-    resources :categories, only: [:index]
-
     # 🔐 Auth
     post 'auth/manual_login', to: 'auth#manual_login'
     post 'auth/google_login', to: 'auth#google_login'
-    post 'auth/signup', to: 'auth#signup'
+    post 'auth/signup',       to: 'auth#signup'
+
+    # 👤 User routes (e.g., avatar update)
+    patch 'user', to: 'users#update'
+
+    # ✅ Categories
+    resources :categories, only: [:index]
 
     # 🏪 Shops
     resources :shops, only: [:create] do
       collection do
-        get :my_shop                      # /api/shops/my_shop
+        get :my_shop
       end
       member do
-        get :show_public                 # /api/shops/:id/show_public
-        get :products_public             # /api/shops/:id/products_public
+        get :show_public
+        get :products_public
       end
     end
 
-    # 🛍️ Products (merchant/internal use)
+    # 🛍️ Products
     resources :products, only: [:index, :create, :show, :update, :destroy]
-
 
     # 💖 Wishlist
     resources :wishlist_items, only: [:index, :create]
-    delete 'wishlist_items', to: 'wishlist_items#destroy'
-    post 'wishlist_items/sync', to: 'wishlist_items#sync'
+    delete 'wishlist_items',         to: 'wishlist_items#destroy'
+    post   'wishlist_items/sync',    to: 'wishlist_items#sync'
 
     # 🛒 Cart
     resources :cart_items, only: [:index, :create]
-    delete 'cart_items', to: 'cart_items#destroy'
+    delete 'cart_items',             to: 'cart_items#destroy'
     delete 'cart_items/destroy_all', to: 'cart_items#destroy_all'
-    post 'cart_items/sync', to: 'cart_items#sync'
+    post   'cart_items/sync',        to: 'cart_items#sync'
 
     # ⭐️ Picks
     get 'picks', to: 'recommended_products#index'
 
     # 📦 Orders (Customer-facing)
-    resources :orders, only: [:index]
+    resources :orders, only: [:index, :create] do
+      member do
+        put :mark_picked_up   # ✅ Add this for user pickup
+      end
+    end
 
     # 📍 Delivery Addresses
     resources :delivery_addresses, only: [:index, :create, :destroy]

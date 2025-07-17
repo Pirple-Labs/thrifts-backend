@@ -4,21 +4,34 @@ module Api
       before_action :ensure_merchant_has_shop!
 
       # GET /api/merchant/orders
-      def index
+        # GET /api/merchant/orders?status=pending&limit=4
+        def index
         shop = current_user.shop
 
         orders = Order
-                   .joins(order_items: :product)
-                   .where(products: { shop_id: shop.id })
-                   .distinct
-                   .includes(:user, order_items: :product)
-                   .order(created_at: :desc)
+                    .joins(order_items: :product)
+                    .where(products: { shop_id: shop.id })
+                    .distinct
+                    .includes(:user, order_items: :product)
+                    .order(created_at: :desc)
+
+        # 🔍 Optional filter by status (e.g., "pending", "processing", etc.)
+        if params[:status].present?
+            orders = orders.where(status: params[:status].strip.downcase)
+        end
+
+        # ⛔️ Optional limit cap (e.g., limit=4, max 50)
+        if params[:limit].present?
+            limit = params[:limit].to_i.clamp(1, 50)
+            orders = orders.limit(limit)
+        end
 
         render json: {
-          success: true,
-          orders: orders.map { |order| serialize_order(order, shop.id) }
+            success: true,
+            orders: orders.map { |order| serialize_order(order, shop.id) }
         }
-      end
+        end
+
 
       # PATCH /api/merchant/orders/:id/update_status
       def update_status

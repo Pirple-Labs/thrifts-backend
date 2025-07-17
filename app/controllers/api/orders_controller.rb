@@ -17,6 +17,72 @@ module Api
       }
     end
 
+    def create
+      address = current_user.delivery_addresses.find_by(id: params[:address_id])
+      unless address
+        return render json: { success: false, error: "Invalid delivery address" }, status: :unprocessable_entity
+      end
+
+      orders = []
+
+      params[:orders].each do |order_data|
+        shop_id = order_data[:shop_id]
+        products = order_data[:products]
+
+        total = products.sum do |item|
+          product = Product.find(item[:product_id])
+          product.price.to_f * item[:quantity].to_i
+        end
+
+        order = current_user.orders.create!(
+          shop_id: shop_id,
+          delivery_address_id: address.id,
+          total_price: total,
+          status: "pending"
+        )
+
+        products.each do |item|
+          product = Product.find(item[:product_id])
+          order.order_items.create!(
+            product_id: product.id,
+            quantity: item[:quantity],
+            price: product.price # Store actual product price at time of order
+          )
+        end
+
+        orders << order
+      end
+
+      render json: {
+        success: true,
+        message: "Orders placed successfully",
+        order_ids: orders.map(&:id)
+      }
+    rescue => e
+      render json: { success: false, error: e.message }, status: :internal_server_error
+    end
+
+    # ✅ NEW: User marks order as picked up from the pickup station
+    def mark_picked_up
+      order = current_user.orders.find_by(id: params[:id])
+
+      unless order
+        return render json: { success: false, error: "Order not found" }, status: :not_found
+      end
+
+      unless order.status == "shipped"
+        return render json: { success: false, error: "Only shipped orders can be marked as picked up" }, status: :unprocessable_entity
+      end
+
+      order.update!(status: "picked_up")
+
+      render json: {
+        success: true,
+        message: "Order marked as picked up",
+        order_id: order.id
+      }
+    end
+
     private
 
     def serialize_order(order)
