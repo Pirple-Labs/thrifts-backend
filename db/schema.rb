@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_07_08_074704) do
+ActiveRecord::Schema[8.0].define(version: 2025_07_28_124519) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -35,6 +35,16 @@ ActiveRecord::Schema[8.0].define(version: 2025_07_08_074704) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["name"], name: "index_categories_on_name", unique: true
+  end
+
+  create_table "complementary_products", force: :cascade do |t|
+    t.bigint "product_id", null: false
+    t.bigint "complementary_product_id", null: false
+    t.string "triggered_by"
+    t.float "score"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["product_id"], name: "index_complementary_products_on_product_id"
   end
 
   create_table "conditions", force: :cascade do |t|
@@ -66,6 +76,21 @@ ActiveRecord::Schema[8.0].define(version: 2025_07_08_074704) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["jti"], name: "index_jwt_denylists_on_jti", unique: true
+  end
+
+  create_table "moderation_events", force: :cascade do |t|
+    t.bigint "product_id", null: false
+    t.bigint "user_id", null: false
+    t.string "image_url"
+    t.string "predicted_label"
+    t.float "confidence"
+    t.string "final_label"
+    t.boolean "is_manual_override"
+    t.text "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["product_id"], name: "index_moderation_events_on_product_id"
+    t.index ["user_id"], name: "index_moderation_events_on_user_id"
   end
 
   create_table "order_items", force: :cascade do |t|
@@ -126,6 +151,10 @@ ActiveRecord::Schema[8.0].define(version: 2025_07_08_074704) do
     t.string "color"
     t.string "size"
     t.integer "stock"
+    t.string "moderation_status", default: "pending"
+    t.string "moderation_label"
+    t.float "moderation_confidence"
+    t.datetime "last_indexed_at"
     t.index ["category_id"], name: "index_products_on_category_id"
     t.index ["shop_id"], name: "index_products_on_shop_id"
   end
@@ -154,6 +183,15 @@ ActiveRecord::Schema[8.0].define(version: 2025_07_08_074704) do
     t.boolean "agreed"
     t.string "store_logo_url"
     t.index ["user_id"], name: "index_shops_on_user_id"
+  end
+
+  create_table "similar_products", force: :cascade do |t|
+    t.bigint "product_id", null: false
+    t.bigint "similar_product_id", null: false
+    t.float "score"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["product_id"], name: "index_similar_products_on_product_id"
   end
 
   create_table "users", force: :cascade do |t|
@@ -189,7 +227,11 @@ ActiveRecord::Schema[8.0].define(version: 2025_07_08_074704) do
 
   add_foreign_key "cart_items", "products"
   add_foreign_key "cart_items", "users"
+  add_foreign_key "complementary_products", "products"
+  add_foreign_key "complementary_products", "products", column: "complementary_product_id"
   add_foreign_key "delivery_addresses", "users"
+  add_foreign_key "moderation_events", "products"
+  add_foreign_key "moderation_events", "users"
   add_foreign_key "order_items", "orders"
   add_foreign_key "order_items", "products"
   add_foreign_key "orders", "delivery_addresses"
@@ -201,6 +243,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_07_08_074704) do
   add_foreign_key "recommended_products", "products"
   add_foreign_key "recommended_products", "users"
   add_foreign_key "shops", "users"
+  add_foreign_key "similar_products", "products"
+  add_foreign_key "similar_products", "products", column: "similar_product_id"
   add_foreign_key "wishlist_items", "products"
   add_foreign_key "wishlist_items", "users"
 end

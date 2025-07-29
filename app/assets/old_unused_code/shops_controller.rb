@@ -38,7 +38,8 @@ class Api::ShopsController < Api::BaseController
   # GET /api/shops/:id/products_public
   def products_public
     products = @shop.products
-                    .where("stock > 0") # ✅ Only in-stock
+                    .where("stock > 0")
+                    .where(moderation_status: "approved") # ✅ Only approved products
                     .order(created_at: :desc)
                     .includes(:shop)
 

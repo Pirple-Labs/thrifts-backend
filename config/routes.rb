@@ -1,68 +1,92 @@
+# config/routes.rb
+
 Rails.application.routes.draw do
-  # Devise routes for standard authentication
-  devise_for :users, controllers: {
-    sessions: 'users/sessions',
-    registrations: 'users/registrations'
-  }
+  # ────────── 🔐 AUTH ──────────
+  namespace :api do
+    namespace :auth do
+      post :manual_login
+      post :google_login
+      post :signup
+    end
+  end
 
-  # API Namespace
-  namespace :api, defaults: { format: :json } do
-    # 🔐 Auth
-    post 'auth/manual_login', to: 'auth#manual_login'
-    post 'auth/google_login', to: 'auth#google_login'
-    post 'auth/signup',       to: 'auth#signup'
+  # ────────── 👤 USERS ──────────
+  namespace :api do
+    namespace :users do
+      resource :profile, only: [:update]
 
-    # 👤 User routes (e.g., avatar update)
-    patch 'user', to: 'users#update'
-
-    # ✅ Categories
-    resources :categories, only: [:index]
-
-    # 🏪 Shops
-    resources :shops, only: [:create] do
-      collection do
-        get :my_shop
+      resources :wishlist_items, only: [:index, :create] do
+        collection do
+          post :sync
+          delete :destroy
+        end
       end
-      member do
-        get :show_public
-        get :products_public
+
+      resources :cart_items, only: [:index, :create] do
+        collection do
+          post :sync
+          delete :destroy
+          delete :destroy_all
+        end
+      end
+
+      resources :delivery_addresses, only: [:index, :create, :destroy]
+
+      resources :orders, only: [:index, :create] do
+        member do
+          put :mark_picked_up
+        end
       end
     end
+  end
 
-    # 🛍️ Products
-    resources :products, only: [:index, :create, :show, :update, :destroy]
-
-    # 💖 Wishlist
-    resources :wishlist_items, only: [:index, :create]
-    delete 'wishlist_items',         to: 'wishlist_items#destroy'
-    post   'wishlist_items/sync',    to: 'wishlist_items#sync'
-
-    # 🛒 Cart
-    resources :cart_items, only: [:index, :create]
-    delete 'cart_items',             to: 'cart_items#destroy'
-    delete 'cart_items/destroy_all', to: 'cart_items#destroy_all'
-    post   'cart_items/sync',        to: 'cart_items#sync'
-
-    # ⭐️ Picks
-    get 'picks', to: 'recommended_products#index'
-
-    # 📦 Orders (Customer-facing)
-    resources :orders, only: [:index, :create] do
-      member do
-        put :mark_picked_up   # ✅ Add this for user pickup
+  # ────────── 🏪 MERCHANTS ──────────
+  namespace :api do
+    namespace :merchants do
+      resource :shop, only: [:create] do
+        get :my_shop, on: :collection
+        get :show_public, on: :member
+        get :products_public, on: :member
       end
-    end
 
-    # 📍 Delivery Addresses
-    resources :delivery_addresses, only: [:index, :create, :destroy]
+      resources :products, only: [:create, :update, :destroy]
 
-    # 📦 Merchant Orders
-    namespace :merchant do
       resources :orders, only: [:index] do
         member do
           patch :update_status
         end
       end
     end
+  end
+
+  # ────────── 🛍 PRODUCTS (Buyer‑facing) ──────────
+  namespace :api do
+    namespace :products do
+      resources :products, only: [:index, :show]
+    end
+  end
+
+  # ────────── ✅ CATEGORIES ──────────
+  namespace :api do
+    namespace :categories do
+      get '/', to: 'categories#index'
+    end
+  end
+
+  # ────────── 🤖 RECOMMENDATIONS ──────────
+  namespace :api do
+    namespace :recommendations, param: :product_id do
+      get   ':product_id',         to: 'show#show'
+      post  ':product_id/refresh', to: 'refresh#refresh'
+    end
+
+    namespace :recommendations do
+      get 'picks', to: 'picks#index'
+    end
+  end
+
+  # ────────── 🔎 MODERATION ──────────
+  namespace :moderations do
+    post 'products/:id', to: 'product_moderations#create'
   end
 end

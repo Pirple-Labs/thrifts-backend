@@ -1,3 +1,69 @@
+this # app/controllers/api/merchants/orders_controller.rb
+
+module Api
+  module Merchants
+    class OrdersController < Api::BaseController
+      def index
+        shop = current_user.shop
+        return render json: { error: "Shop not found" }, status: :not_found unless shop
+
+        orders = Order.includes(order_items: :product)
+                      .where(shop_id: shop.id)
+                      .order(created_at: :desc)
+
+        render json: {
+          success: true,
+          orders: orders.map { |order| serialize_order(order) }
+        }
+      end
+
+      def update_status
+        shop = current_user.shop
+        return render json: { error: "Shop not found" }, status: :not_found unless shop
+
+        order = shop.orders.find_by(id: params[:id])
+        return render json: { error: "Order not found" }, status: :not_found unless order
+
+        if order.update(status: params[:status])
+          render json: { success: true, message: "Order status updated", order_id: order.id }
+        else
+          render json: { success: false, errors: order.errors.full_messages }, status: :unprocessable_entity
+        end
+      end
+
+      private
+
+      def serialize_order(order)
+        {
+          id: order.id,
+          user_id: order.user_id,
+          status: order.status,
+          total_items: order.total_items,
+          total_price: order.total_price,
+          placed_on: order.created_at.strftime("%b %d, %Y"),
+          delivery_address: {
+            nickname: order.delivery_address.nickname,
+            phone: order.delivery_address.phone,
+            location: order.delivery_address.location,
+            pickup_agent: order.delivery_address.pickup_agent
+          },
+          items: order.order_items.map do |item|
+            product = item.product
+            {
+              product_id: product.id,
+              name: product.name,
+              main_image: product.main_image,
+              quantity: item.quantity,
+              unit_price: item.price,
+              subtotal: item.price * item.quantity
+            }
+          end
+        }
+      end
+    end
+  end
+end
+is not the same as this unless i am missing something
 module Api
   module Merchant
     class OrdersController < Api::BaseController
