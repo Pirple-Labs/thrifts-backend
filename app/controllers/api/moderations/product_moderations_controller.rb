@@ -1,49 +1,46 @@
 module Api
   module Moderations
     class ProductModerationsController < Api::BaseController
-      before_action :authenticate_user!
+      skip_before_action :authenticate_user!  # ← ✅ Disable sign-in requirement
       before_action :set_product
 
       def create
-        image_url = @product.main_image
-
-        if image_url.blank?
-          return render json: { error: "No image found for moderation." }, status: :unprocessable_entity
+        if @product.main_image.blank?
+          return render json: { error: "No image to moderate." }, status: :unprocessable_entity
         end
 
-        begin
-          # ✅ Correct instantiation and call of ModerationService
-          response = ModerationService.new(@product, image_url, user_id: current_user.id).call
+        flask_response = post_to_flask(
+          ENV.fetch("SENTRY_AGENT_URL", "http://127.0.0.1:5000/moderate"),
+          { image_url: @product.main_image }
+        )
 
-          # Save moderation event
-          ModerationEvent.create!(
-            product_id:         @product.id,
-            user_id:            current_user.id,
-            image_url:          image_url,
-            predicted_label:    response[:category],
-            confidence:         response[:confidence],
-            final_label:        response[:category],
-            is_manual_override: false,
-            notes:              response[:reason]
-          )
+        result = JSON.parse(flask_response.body)
 
-          # Update product with moderation result
-          @product.update!(
-            moderation_status:     "moderated",
-            moderation_label:      response[:category],
-            moderation_confidence: response[:confidence]
-          )
+        @product.update!(
+          moderation_label: result["category"],
+          moderation_confidence: result["confidence"],
+          moderation_reason: result["reason"]
+        )
 
-          render json: { status: "success", result: response }, status: :ok
-        rescue => e
-          render json: { error: e.message }, status: :bad_gateway
-        end
+        render json: { status: "updated", moderation: result }, status: :ok
+
+      rescue => e
+        Rails.logger.error "❌ Moderation failed: #{e.class} – #{e.message}"
+        render json: { error: "Moderation failed", detail: e.message }, status: :bad_gateway
       end
 
       private
 
       def set_product
         @product = Product.find(params[:id])
+      end
+
+      def post_to_flask(endpoint, payload)
+        uri = URI.parse(endpoint)
+        http = Net::HTTP.new(uri.host, uri.port)
+        request = Net::HTTP::Post.new(uri, "Content-Type" => "application/json")
+        request.body = payload.to_json
+        http.request(request)
       end
     end
   end

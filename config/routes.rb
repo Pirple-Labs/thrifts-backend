@@ -1,30 +1,29 @@
-# config/routes.rb
-
 Rails.application.routes.draw do
-  # ────────── 🔐 AUTH ──────────
-  namespace :api do
-    namespace :auth do
-      post :manual_login
-      post :google_login
-      post :signup
-    end
-  end
+  devise_for :users, defaults: { format: :json }
 
-  # ────────── 👤 USERS ──────────
   namespace :api do
+
+    # ────────── 🔐 AUTH ──────────
+    namespace :auth do
+      post :manual_login, to: 'auth#manual_login'
+      post :google_login, to: 'auth#google_login'
+      post :signup,       to: 'auth#signup'
+    end
+
+    # ────────── 👤 USERS ──────────
     namespace :users do
-      resource :profile, only: [:update]
+      resource  :profile, only: [:update]
 
       resources :wishlist_items, only: [:index, :create] do
         collection do
-          post :sync
+          post   :sync
           delete :destroy
         end
       end
 
       resources :cart_items, only: [:index, :create] do
         collection do
-          post :sync
+          post   :sync
           delete :destroy
           delete :destroy_all
         end
@@ -32,24 +31,27 @@ Rails.application.routes.draw do
 
       resources :delivery_addresses, only: [:index, :create, :destroy]
 
-      resources :orders, only: [:index, :create] do
+      resources :orders, only: [:index, :create, :show] do
         member do
           put :mark_picked_up
         end
       end
     end
-  end
 
-  # ────────── 🏪 MERCHANTS ──────────
-  namespace :api do
+    # ────────── 🏪 MERCHANTS ──────────
     namespace :merchants do
       resource :shop, only: [:create] do
-        get :my_shop, on: :collection
-        get :show_public, on: :member
-        get :products_public, on: :member
+        collection do
+          get :my_shop
+        end
+
+        member do
+          get :show_public
+          get :products_public
+        end
       end
 
-      resources :products, only: [:create, :update, :destroy]
+      resources :products, only: [:index, :create, :update, :destroy]
 
       resources :orders, only: [:index] do
         member do
@@ -57,36 +59,35 @@ Rails.application.routes.draw do
         end
       end
     end
-  end
 
-  # ────────── 🛍 PRODUCTS (Buyer‑facing) ──────────
-  namespace :api do
+    # ────────── 🛍 PRODUCTS (Buyer-facing) ──────────
     namespace :products do
       resources :products, only: [:index, :show]
     end
-  end
 
-  # ────────── ✅ CATEGORIES ──────────
-  namespace :api do
-    namespace :categories do
-      get '/', to: 'categories#index'
-    end
-  end
+    # ────────── ✅ CATEGORIES ──────────
+    get 'categories', to: 'categories/categories#index'
 
-  # ────────── 🤖 RECOMMENDATIONS ──────────
-  namespace :api do
-    namespace :recommendations, param: :product_id do
-      get   ':product_id',         to: 'show#show'
-      post  ':product_id/refresh', to: 'refresh#refresh'
-    end
-
+    # ────────── 🤖 RECOMMENDATIONS ──────────
     namespace :recommendations do
-      get 'picks', to: 'picks#index'
+      get  'picks',                to: 'picks#index'
+      get  ':product_id',         to: 'show#show',     as: :product_recommendations
+      post ':product_id/refresh', to: 'refresh#refresh'
     end
-  end
 
-  # ────────── 🔎 MODERATION ──────────
-  namespace :moderations do
-    post 'products/:id', to: 'product_moderations#create'
+    # ────────── 🔎 MODERATION ──────────
+    namespace :moderations do
+      post "products/:id", to: "product_moderations#create"
+      post "batch",        to: "batch_moderations#create"
+    end
+
+    # ────────── 💰 PAYMENTS ──────────
+    namespace :payments do
+      post 'stk_push',    to: 'stk_pushes#create'
+      post 'withdrawals', to: 'withdrawals#create' 
+      get 'withdrawals', to: 'withdrawals#index'      # Future: merchant requests payout
+      post 'callback',    to: 'callbacks#stk_callback'   # STK push callback
+    end
+
   end
 end

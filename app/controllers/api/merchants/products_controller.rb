@@ -1,8 +1,21 @@
 module Api
   module Merchants
     class ProductsController < Api::BaseController
-      def create
+
+    def index
         shop = current_user.shop
+        return render json: { error: "Shop not found" }, status: :not_found unless shop
+
+        products = shop.products.order(created_at: :desc)
+
+        render json: {
+            success: true,
+            products: products.map { |p| serialize_product(p) }
+        }
+      end
+
+    def create
+     shop = current_user.shop
         return render json: { errors: ["Shop not found"] }, status: :unprocessable_entity unless shop
 
         product = shop.products.new(product_params.except(:shop_id))
@@ -56,6 +69,12 @@ module Api
           :color, :size, :stock, supplementary_images: []
         )
       end
+
+      def serialize_product(product)
+        product.as_json(only: [
+            :id, :name, :price, :stock, :main_image, :moderation_status, :created_at
+        ])
+     end
     end
   end
 end

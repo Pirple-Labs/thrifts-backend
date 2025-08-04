@@ -6,7 +6,7 @@ module Api
   module Auth
     class AuthController < Api::BaseController
       skip_before_action :authenticate_user!, only: [:manual_login, :google_login, :signup]
-      skip_before_action :verify_authenticity_token, only: [:manual_login, :google_login, :signup]
+    #   skip_before_action :verify_authenticity_token, only: [:manual_login, :google_login, :signup]
 
       # POST /api/auth/manual_login
       def manual_login

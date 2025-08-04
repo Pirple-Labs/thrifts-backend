@@ -1,5 +1,3 @@
-# app/controllers/api/users/orders_controller.rb
-
 module Api
   module Users
     class OrdersController < Api::BaseController
@@ -67,11 +65,28 @@ module Api
         return render json: { success: false, error: "Order not found" }, status: :not_found unless order
         return render json: { success: false, error: "Only shipped orders can be marked as picked up" }, status: :unprocessable_entity unless order.status == "shipped"
 
-        order.update!(status: "picked_up")
+        ActiveRecord::Base.transaction do
+          # 1. Update order status
+          order.update!(status: "picked_up")
+
+          # 2. Release escrowed funds to merchant
+          merchant_payment = MerchantPayment.find_by(order_id: order.id, status: "escrowed")
+
+          if merchant_payment.present?
+            merchant_payment.update!(
+              status: "released",
+              released_at: Time.current
+            )
+
+            # 3. Credit merchant wallet
+            wallet = MerchantWallet.find_or_create_by!(shop_id: order.shop_id)
+            wallet.update!(balance: wallet.balance + merchant_payment.amount)
+          end
+        end
 
         render json: {
           success: true,
-          message: "Order marked as picked up",
+          message: "Order marked as picked up and funds released to merchant",
           order_id: order.id
         }
       end
