@@ -4,8 +4,8 @@ module Api
   module Users
     class CartItemsController < Api::BaseController
       def index
-        items = current_user.cart_items.includes(:product)
-        render json: { items: items.as_json(include: :product) }
+        items = current_user.cart_items.includes(product: :shop)
+        render json: { items: items.as_json(include: { product: { include: :shop } }) }
       end
 
       def create
@@ -15,7 +15,7 @@ module Api
         item = current_user.cart_items.new(product_id: product_id, quantity: quantity)
 
         if item.save
-          render json: { success: true, item: item.as_json(include: :product) }
+          render json: { success: true, item: item.as_json(include: { product: { include: :shop } }) }
         else
           render json: { success: false, errors: item.errors.full_messages }, status: :unprocessable_entity
         end
@@ -58,7 +58,7 @@ module Api
 
         render json: {
           success: true,
-          items: new_items.map { |i| i.as_json(include: :product) }
+          items: new_items.map { |i| i.as_json(include: { product: { include: :shop } }) }
         }
       end
     end

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_08_04_070102) do
+ActiveRecord::Schema[8.0].define(version: 2025_08_11_090948) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -145,6 +145,15 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_04_070102) do
     t.datetime "completed_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "amount", null: false
+    t.string "gateway", default: "mpesa", null: false
+    t.string "mpesa_merchant_request_id"
+    t.integer "result_code"
+    t.string "result_desc"
+    t.string "checkout_key"
+    t.text "raw_callback"
+    t.index ["checkout_key"], name: "index_payments_on_checkout_key", unique: true
+    t.index ["mpesa_checkout_request_id"], name: "index_payments_on_mpesa_checkout_request_id"
     t.index ["user_id"], name: "index_payments_on_user_id"
   end
 

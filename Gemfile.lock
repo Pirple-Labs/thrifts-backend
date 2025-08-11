@@ -460,6 +460,7 @@ DEPENDENCIES
   devise-jwt (~> 0.12.1)
   dotenv-rails
   faker
+  faraday (~> 2.12)
   google-id-token (~> 1.4)
   httparty
   importmap-rails

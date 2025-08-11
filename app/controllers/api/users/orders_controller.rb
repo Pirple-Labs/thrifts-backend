@@ -16,69 +16,88 @@ module Api
         }
       end
 
-      def create
-        address = current_user.delivery_addresses.find_by(id: params[:address_id])
-        return render json: { success: false, error: "Invalid delivery address" }, status: :unprocessable_entity unless address
+    def create
+      address = current_user.delivery_addresses.find_by(id: params[:address_id])
+      return render json: { success: false, error: "Invalid delivery address" }, status: :unprocessable_entity unless address
 
-        orders = []
+      # 1) Payment must exist and be success
+      payment = Payment.find_by(id: params[:payment_id], user_id: current_user.id)
+      return render json: { success: false, error: "Payment not found" }, status: :unprocessable_entity unless payment
+      return render json: { success: false, error: "Payment not completed" }, status: :unprocessable_entity unless payment.status == "success"
 
-        params[:orders].each do |order_data|
-          shop_id  = order_data[:shop_id]
-          products = order_data[:products]
+      # 2) Orders payload must be an array
+      orders_param = params[:orders]
+      return render json: { success: false, error: "Invalid orders payload" }, status: :unprocessable_entity unless orders_param.is_a?(Array) && orders_param.any?
 
-          total = products.sum do |item|
-            product = Product.find(item[:product_id])
-            product.price.to_f * item[:quantity].to_i
+      # 3) Compute grand total (robustly) and verify it’s covered by payment.amount (whole KES)
+      grand_total = orders_param.inject(0.0) do |acc, order_data|
+        products = Array(order_data[:products])
+        sub = products.inject(0.0) do |acc2, item|
+          pid = item[:product_id] || item["product_id"]
+          qty = (item[:quantity] || item["quantity"]).to_i
+          product = Product.find(pid) # raises if nil/invalid → rescued below
+          acc2 + product.price.to_f * qty
+        end
+        acc + sub
+      end
+      grand_total_int = grand_total.round
+      if payment.amount.to_i < grand_total_int
+        return render json: { success: false, error: "Payment amount (#{payment.amount}) is less than order total (#{grand_total_int})" },
+                      status: :unprocessable_entity
+      end
+
+      created = []
+      ActiveRecord::Base.transaction do
+        orders_param.each do |order_data|
+          shop_id  = order_data[:shop_id] || order_data["shop_id"]
+          products = Array(order_data[:products])
+
+          total  = products.inject(0.0) do |acc, item|
+            pid = item[:product_id] || item["product_id"]
+            qty = (item[:quantity] || item["quantity"]).to_i
+            product = Product.find(pid)
+            acc + product.price.to_f * qty
           end
+          items_count = products.sum { |i| (i[:quantity] || i["quantity"]).to_i }
 
           order = current_user.orders.create!(
-            shop_id: shop_id,
+            shop_id:             shop_id,
             delivery_address_id: address.id,
-            total_price: total,
-            status: "pending"
+            total_price:         total,
+            total_items:         items_count,
+            status:              "paid",          # payment already succeeded
+            payment_id:          payment.id
           )
 
           products.each do |item|
-            product = Product.find(item[:product_id])
-            order.order_items.create!(
-              product_id: product.id,
-              quantity: item[:quantity],
-              price: product.price
-            )
+            pid = item[:product_id] || item["product_id"]
+            qty = (item[:quantity] || item["quantity"]).to_i
+            product = Product.find(pid)
+            order.order_items.create!(product_id: product.id, quantity: qty, price: product.price)
           end
 
-          orders << order
+          created << order
         end
-
-        render json: {
-          success: true,
-          message: "Orders placed successfully",
-          order_ids: orders.map(&:id)
-        }
-      rescue => e
-        render json: { success: false, error: e.message }, status: :internal_server_error
       end
+
+      render json: { success: true, message: "Orders created", order_ids: created.map(&:id) }
+    rescue => e
+      Rails.logger.error("[Orders][CREATE][ERROR] #{e.class}: #{e.message}")
+      render json: { success: false, error: e.message }, status: :internal_server_error
+    end
+
 
       def mark_picked_up
         order = current_user.orders.find_by(id: params[:id])
-
         return render json: { success: false, error: "Order not found" }, status: :not_found unless order
         return render json: { success: false, error: "Only shipped orders can be marked as picked up" }, status: :unprocessable_entity unless order.status == "shipped"
 
         ActiveRecord::Base.transaction do
-          # 1. Update order status
           order.update!(status: "picked_up")
 
-          # 2. Release escrowed funds to merchant
           merchant_payment = MerchantPayment.find_by(order_id: order.id, status: "escrowed")
-
           if merchant_payment.present?
-            merchant_payment.update!(
-              status: "released",
-              released_at: Time.current
-            )
-
-            # 3. Credit merchant wallet
+            merchant_payment.update!(status: "released", released_at: Time.current)
             wallet = MerchantWallet.find_or_create_by!(shop_id: order.shop_id)
             wallet.update!(balance: wallet.balance + merchant_payment.amount)
           end

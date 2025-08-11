@@ -1,5 +1,6 @@
 class User < ApplicationRecord
   # Associations
+
 has_one :shop, dependent: :destroy
 has_many :products, through: :shop
 
@@ -14,6 +15,7 @@ has_many :recommended_products_list, through: :recommended_products, source: :pr
 
 has_many :orders, dependent: :destroy
 has_many :delivery_addresses, dependent: :destroy
+has_many :payments, dependent: :nullify
   # Role management
   # enum role: { user: 0, merchant: 1, admin: 2 }
 

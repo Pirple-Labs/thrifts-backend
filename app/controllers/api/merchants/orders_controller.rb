@@ -1,105 +1,40 @@
-this # app/controllers/api/merchants/orders_controller.rb
+# app/controllers/api/merchants/orders_controller.rb
 
 module Api
   module Merchants
     class OrdersController < Api::BaseController
-      def index
-        shop = current_user.shop
-        return render json: { error: "Shop not found" }, status: :not_found unless shop
-
-        orders = Order.includes(order_items: :product)
-                      .where(shop_id: shop.id)
-                      .order(created_at: :desc)
-
-        render json: {
-          success: true,
-          orders: orders.map { |order| serialize_order(order) }
-        }
-      end
-
-      def update_status
-        shop = current_user.shop
-        return render json: { error: "Shop not found" }, status: :not_found unless shop
-
-        order = shop.orders.find_by(id: params[:id])
-        return render json: { error: "Order not found" }, status: :not_found unless order
-
-        if order.update(status: params[:status])
-          render json: { success: true, message: "Order status updated", order_id: order.id }
-        else
-          render json: { success: false, errors: order.errors.full_messages }, status: :unprocessable_entity
-        end
-      end
-
-      private
-
-      def serialize_order(order)
-        {
-          id: order.id,
-          user_id: order.user_id,
-          status: order.status,
-          total_items: order.total_items,
-          total_price: order.total_price,
-          placed_on: order.created_at.strftime("%b %d, %Y"),
-          delivery_address: {
-            nickname: order.delivery_address.nickname,
-            phone: order.delivery_address.phone,
-            location: order.delivery_address.location,
-            pickup_agent: order.delivery_address.pickup_agent
-          },
-          items: order.order_items.map do |item|
-            product = item.product
-            {
-              product_id: product.id,
-              name: product.name,
-              main_image: product.main_image,
-              quantity: item.quantity,
-              unit_price: item.price,
-              subtotal: item.price * item.quantity
-            }
-          end
-        }
-      end
-    end
-  end
-end
-is not the same as this unless i am missing something
-module Api
-  module Merchant
-    class OrdersController < Api::BaseController
       before_action :ensure_merchant_has_shop!
 
-      # GET /api/merchant/orders
-        # GET /api/merchant/orders?status=pending&limit=4
-        def index
+      # GET /api/merchants/orders
+      # GET /api/merchants/orders?status=pending&limit=4
+      def index
         shop = current_user.shop
 
         orders = Order
-                    .joins(order_items: :product)
-                    .where(products: { shop_id: shop.id })
-                    .distinct
-                    .includes(:user, order_items: :product)
-                    .order(created_at: :desc)
+                  .joins(order_items: :product)
+                  .where(products: { shop_id: shop.id })
+                  .distinct
+                  .includes(:user, order_items: :product)
+                  .order(created_at: :desc)
 
-        # 🔍 Optional filter by status (e.g., "pending", "processing", etc.)
+        # 🔍 Optional status filter
         if params[:status].present?
-            orders = orders.where(status: params[:status].strip.downcase)
+          orders = orders.where(status: params[:status].strip.downcase)
         end
 
-        # ⛔️ Optional limit cap (e.g., limit=4, max 50)
+        # ⛔️ Optional limit (e.g. limit=4, max 50)
         if params[:limit].present?
-            limit = params[:limit].to_i.clamp(1, 50)
-            orders = orders.limit(limit)
+          limit = params[:limit].to_i.clamp(1, 50)
+          orders = orders.limit(limit)
         end
 
         render json: {
-            success: true,
-            orders: orders.map { |order| serialize_order(order, shop.id) }
-        }
-        end
+          success: true,
+          orders: orders.map { |order| serialize_order(order, shop.id) }
+        }, status: :ok
+      end
 
-
-      # PATCH /api/merchant/orders/:id/update_status
+      # PATCH /api/merchants/orders/:id/update_status
       def update_status
         shop_id = current_user.shop.id
 
@@ -160,7 +95,9 @@ module Api
             id: order.user.id,
             name: order.user.name
           },
-          items: order.order_items.select { |item| item.product.shop_id == shop_id }.map do |item|
+          items: order.order_items
+                       .select { |item| item.product.shop_id == shop_id }
+                       .map do |item|
             {
               product_id: item.product.id,
               name: item.product.name,

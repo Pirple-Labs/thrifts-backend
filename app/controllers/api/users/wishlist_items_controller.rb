@@ -4,8 +4,8 @@ module Api
   module Users
     class WishlistItemsController < Api::BaseController
       def index
-        items = current_user.wishlist_items.includes(:product)
-        render json: { items: items.as_json(include: :product) }
+        items = current_user.wishlist_items.includes(product: :shop)
+        render json: { items: items.as_json(include: { product: { include: :shop } }) }
       end
 
       def create

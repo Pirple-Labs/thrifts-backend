@@ -76,3 +76,5 @@ gem "google-id-token", "~> 1.4"
 gem 'cloudinary'
 gem 'httparty'
 
+
+gem "faraday", "~> 2.12"

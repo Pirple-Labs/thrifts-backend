@@ -22,5 +22,8 @@ module ThriftsBackend
 
     # Add other lib folders to ignore from autoload/reload if needed
     config.autoload_lib(ignore: %w[assets tasks])
+    # config/application.rb
+    config.time_zone = "Africa/Nairobi"
+
   end
 end

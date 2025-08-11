@@ -1,3 +1,4 @@
+# config/environments/development.rb
 require "active_support/core_ext/integer/time"
 
 Rails.application.configure do
@@ -5,6 +6,10 @@ Rails.application.configure do
   config.enable_reloading = true
   config.eager_load = false
   config.consider_all_requests_local = true
+
+  # Allow ngrok (public tunnel) to hit our dev server for Daraja callbacks
+  # Matches any subdomain like https://<random>.ngrok-free.app
+  config.hosts << /[a-z0-9-]+\.ngrok-free\.app/
 
   # Server timing headers
   config.server_timing = true
@@ -32,10 +37,10 @@ Rails.application.configure do
   config.action_mailer.default_url_options = { host: "localhost", port: 3000 }
 
   config.action_mailer.smtp_settings = {
-    address:              "smtp.gmail.com",       # Change if using Mailtrap, SendGrid, etc.
+    address:              "smtp.gmail.com",
     port:                 587,
     domain:               "localhost",
-    user_name:            ENV["SMTP_USERNAME"],
+    user_name:            ENV["SMTP_USERNAME"], # ensure this is set in .env if you use email locally
     password:             ENV["SMTP_PASSWORD"],
     authentication:       "plain",
     enable_starttls_auto: true
@@ -58,7 +63,6 @@ Rails.application.configure do
   # Raise if a controller callback references a missing action
   config.action_controller.raise_on_missing_callback_actions = true
 
+  # Cookies policy for dev (adjust if needed)
   config.action_dispatch.cookies_same_site_protection = :none
-
-
 end

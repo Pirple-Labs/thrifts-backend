@@ -83,11 +83,21 @@ Rails.application.routes.draw do
 
     # ────────── 💰 PAYMENTS ──────────
     namespace :payments do
-      post 'stk_push',    to: 'stk_pushes#create'
-      post 'withdrawals', to: 'withdrawals#create' 
-      get 'withdrawals', to: 'withdrawals#index'      # Future: merchant requests payout
-      post 'callback',    to: 'callbacks#stk_callback'   # STK push callback
+      # Initiate STK push
+      resources :stk_push, only: :create
+
+      # Single, unambiguous STK callback endpoint
+      # Make MPESA_CALLBACK_URL point to: https://<public-host>/api/payments/callback
+       post "callback", to: "daraja_callbacks#create"
+
+      # Withdrawals
+      resources :withdrawals, only: [:index, :create]
     end
+    # inside namespace :api do
+    namespace :payments do
+      get ':id', to: 'payments#show'
+    end
+
 
   end
 end
