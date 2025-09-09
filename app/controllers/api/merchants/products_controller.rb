@@ -93,7 +93,14 @@ module Api
           :size,
           :stock,
           :moderation_status,          # allow for override (e.g., approved)
-          supplementary_images: []     # handle multiple supplementary images
+          :subcategory,               # NEW: More specific category
+          :material,                  # NEW: What it's made of
+          :style,                     # NEW: Design aesthetic
+          :use_case,                  # NEW: How it's used
+          :seasonality,               # NEW: When it's appropriate
+          :brand_id,                  # NEW: Brand selection
+          supplementary_images: [],   # handle multiple supplementary images
+          specifications: {}          # NEW: Technical details (JSON)
         )
       end
 
@@ -107,10 +114,20 @@ module Api
             :main_image,
             :moderation_status,
             :category_id,
+            :subcategory,              # NEW: Include subcategory
+            :material,                 # NEW: Include material
+            :style,                    # NEW: Include style
+            :use_case,                 # NEW: Include use case
+            :seasonality,              # NEW: Include seasonality
+            :brand_id,                 # NEW: Include brand ID
+            :specifications,           # NEW: Include specifications
             :created_at
           ]
         ).merge(
-          category_name: product.category&.name
+          category_name: product.category&.name,
+          brand_name: product.brand&.name,           # NEW: Include brand name
+          brand_category: product.brand&.category,   # NEW: Include brand category
+          brand_specialization: product.brand&.specialization  # NEW: Include brand specialization
         )
       end
     end

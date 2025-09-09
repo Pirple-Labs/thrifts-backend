@@ -5,6 +5,7 @@ default: &default
   username: thrifts_user
   password: '123456'
   host: 127.0.0.1
+  port: 5433
 
 development:
   <<: *default
