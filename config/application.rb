@@ -18,12 +18,18 @@ module ThriftsBackend
     config.api_only = true
 
     config.action_dispatch.default_headers['Referrer-Policy'] = 'no-referrer-when-downgrade'
+    
+    # Add request ID middleware for Operator communication
+    require_relative '../app/middleware/request_id_middleware'
+    config.middleware.use RequestIdMiddleware
     config.middleware.use ActionDispatch::Session::CookieStore, key: '_your_app_session'
 
     # Add other lib folders to ignore from autoload/reload if needed
     config.autoload_lib(ignore: %w[assets tasks])
     # config/application.rb
     config.time_zone = "Africa/Nairobi"
-
+    config.load_defaults 8.0
+    config.autoload_paths << Rails.root.join("app/services")
+    config.eager_load_paths << Rails.root.join("app/services")
   end
 end

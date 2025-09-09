@@ -17,6 +17,9 @@ gem "stimulus-rails"
 # Build JSON APIs with ease [https://github.com/rails/jbuilder]
 gem "jbuilder"
 
+# HTTP client for Operator communication
+gem "http"
+
 # Use Active Model has_secure_password [https://guides.rubyonrails.org/active_model_basics.html#securepassword]
 gem "bcrypt", "~> 3.1.7"
 
@@ -75,6 +78,8 @@ gem 'dotenv-rails'
 gem "google-id-token", "~> 1.4"
 gem 'cloudinary'
 gem 'httparty'
+# gem 'faraday'
 
 
 gem "faraday", "~> 2.12"
+gem "pgvector", "~> 0.2"

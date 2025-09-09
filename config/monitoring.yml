@@ -1,0 +1,265 @@
+# config/monitoring.yml
+# Production monitoring configuration for personalization system
+
+# SLOs (Service Level Objectives)
+slo:
+  feeds:
+    p95_latency_ms: 1000
+    error_rate_percent: 0.5
+    availability_percent: 99.9
+  
+  operator:
+    p95_latency_ms: 800
+    error_rate_percent: 0.5
+    availability_percent: 99.5
+  
+  search:
+    text_p95_latency_ms: 120
+    image_p95_latency_ms: 250
+    knn_p95_latency_ms: 80
+  
+  etl:
+    join_success_rate_percent: 95
+    hourly_backfill_success_rate_percent: 98
+
+# Alert thresholds
+alerts:
+  critical:
+    feed_p95_latency_ms: 2000      # 2x SLO
+    feed_error_rate_percent: 2.0   # 4x SLO
+    operator_p95_latency_ms: 1500  # 2x SLO
+    operator_error_rate_percent: 2.0
+  
+  warning:
+    feed_p95_latency_ms: 1200      # 1.2x SLO
+    feed_error_rate_percent: 1.0   # 2x SLO
+    operator_p95_latency_ms: 1000  # 1.25x SLO
+    operator_error_rate_percent: 1.0
+  
+  info:
+    cache_hit_rate_drop_percent: 10
+    empty_section_rate_percent: 5
+    cloudinary_error_rate_percent: 2
+
+# Metrics collection
+metrics:
+  # Application metrics
+  application:
+    - name: "feed_requests_total"
+      type: "counter"
+      labels: ["endpoint", "plan_id", "status_code"]
+    
+    - name: "feed_request_duration_seconds"
+      type: "histogram"
+      labels: ["endpoint", "plan_id"]
+      buckets: [0.1, 0.25, 0.5, 1.0, 2.0, 5.0, 10.0]
+    
+    - name: "feed_cache_hit_ratio"
+      type: "gauge"
+      labels: ["endpoint", "plan_id"]
+    
+    - name: "feed_empty_section_ratio"
+      type: "gauge"
+      labels: ["endpoint", "plan_id"]
+  
+  # Search metrics
+  search:
+    - name: "search_requests_total"
+      type: "counter"
+      labels: ["type", "status_code"]
+    
+    - name: "search_duration_seconds"
+      type: "histogram"
+      labels: ["type"]
+      buckets: [0.05, 0.1, 0.25, 0.5, 1.0, 2.0]
+    
+    - name: "search_cache_hit_ratio"
+      type: "gauge"
+      labels: ["type"]
+    
+    - name: "search_results_count"
+      type: "histogram"
+      labels: ["type"]
+      buckets: [0, 1, 5, 10, 20, 50, 100, 200]
+  
+  # ETL metrics
+  etl:
+    - name: "etl_job_duration_seconds"
+      type: "histogram"
+      labels: ["job_name", "status"]
+      buckets: [10, 30, 60, 300, 600, 1800, 3600]
+    
+    - name: "etl_join_success_rate"
+      type: "gauge"
+      labels: ["job_name", "window_type"]
+    
+    - name: "etl_records_processed_total"
+      type: "counter"
+      labels: ["job_name", "status"]
+  
+  # Business metrics
+  business:
+    - name: "feed_engagement_total"
+      type: "counter"
+      labels: ["action", "plan_id", "section"]
+    
+    - name: "feed_conversion_rate"
+      type: "gauge"
+      labels: ["plan_id", "section"]
+    
+    - name: "search_conversion_rate"
+      type: "gauge"
+      labels: ["type", "query_length"]
+
+# Dashboard configurations
+dashboards:
+  overview:
+    title: "Personalization System Overview"
+    refresh: "30s"
+    panels:
+      - title: "Feed Performance"
+        type: "graph"
+        metrics: ["feed_requests_total", "feed_request_duration_seconds"]
+        time_range: "1h"
+      
+      - title: "Search Performance"
+        type: "graph"
+        metrics: ["search_requests_total", "search_duration_seconds"]
+        time_range: "1h"
+      
+      - title: "Cache Performance"
+        type: "stat"
+        metrics: ["feed_cache_hit_ratio", "search_cache_hit_ratio"]
+      
+      - title: "Error Rates"
+        type: "graph"
+        metrics: ["feed_requests_total"]
+        filters: ["status_code >= 400"]
+        time_range: "1h"
+  
+  feeds:
+    title: "Feed Performance Details"
+    refresh: "15s"
+    panels:
+      - title: "Response Time Distribution"
+        type: "heatmap"
+        metrics: ["feed_request_duration_seconds"]
+        time_range: "1h"
+      
+      - title: "Plan Performance"
+        type: "table"
+        metrics: ["feed_requests_total", "feed_request_duration_seconds", "feed_cache_hit_ratio"]
+        group_by: ["plan_id"]
+        time_range: "1h"
+      
+      - title: "Empty Section Rate"
+        type: "graph"
+        metrics: ["feed_empty_section_ratio"]
+        time_range: "6h"
+  
+  search:
+    title: "Search Performance Details"
+    refresh: "15s"
+    panels:
+      - title: "Search Volume by Type"
+        type: "pie"
+        metrics: ["search_requests_total"]
+        group_by: ["type"]
+        time_range: "1h"
+      
+      - title: "Search Response Times"
+        type: "graph"
+        metrics: ["search_duration_seconds"]
+        group_by: ["type"]
+        time_range: "1h"
+      
+      - title: "Cache Performance"
+        type: "stat"
+        metrics: ["search_cache_hit_ratio"]
+        group_by: ["type"]
+  
+  etl:
+    title: "ETL Job Monitoring"
+    refresh: "1m"
+    panels:
+      - title: "Job Duration Trends"
+        type: "graph"
+        metrics: ["etl_job_duration_seconds"]
+        group_by: ["job_name"]
+        time_range: "24h"
+      
+      - title: "Join Success Rates"
+        type: "graph"
+        metrics: ["etl_join_success_rate"]
+        group_by: ["job_name", "window_type"]
+        time_range: "24h"
+      
+      - title: "Records Processed"
+        type: "graph"
+        metrics: ["etl_records_processed_total"]
+        group_by: ["job_name", "status"]
+        time_range: "24h"
+
+# Alert rules
+alert_rules:
+  - name: "High Feed Latency"
+    condition: "feed_request_duration_seconds{quantile=\"0.95\"} > 1.2"
+    duration: "5m"
+    severity: "warning"
+    summary: "Feed P95 latency is {{ $value }}s (threshold: 1.2s)"
+    description: "Feed performance is degrading. Check database performance and cache hit rates."
+  
+  - name: "Critical Feed Latency"
+    condition: "feed_request_duration_seconds{quantile=\"0.95\"} > 2.0"
+    duration: "2m"
+    severity: "critical"
+    summary: "Feed P95 latency is {{ $value }}s (threshold: 2.0s)"
+    description: "Feed performance is critically degraded. Immediate investigation required."
+  
+  - name: "High Error Rate"
+    condition: "rate(feed_requests_total{status_code=~\"5..\"}[5m]) / rate(feed_requests_total[5m]) > 0.02"
+    duration: "5m"
+    severity: "warning"
+    summary: "Feed error rate is {{ $value | humanizePercentage }}"
+    description: "High error rate detected. Check application logs and dependencies."
+  
+  - name: "Low Cache Hit Rate"
+    condition: "feed_cache_hit_ratio < 0.5"
+    duration: "10m"
+    severity: "warning"
+    summary: "Cache hit rate is {{ $value | humanizePercentage }}"
+    description: "Cache performance is poor. Check Redis and cache warming strategies."
+  
+  - name: "ETL Join Failure"
+    condition: "etl_join_success_rate < 0.95"
+    duration: "15m"
+    severity: "warning"
+    summary: "ETL join success rate is {{ $value | humanizePercentage }}"
+    description: "ETL job is failing to join data properly. Check data quality and join logic."
+  
+  - name: "Search Performance Degradation"
+    condition: "search_duration_seconds{quantile=\"0.95\"} > 0.5"
+    duration: "5m"
+    severity: "warning"
+    summary: "Search P95 latency is {{ $value }}s (threshold: 0.5s)"
+    description: "Search performance is degrading. Check vector indexes and database performance."
+
+# Notification channels
+notifications:
+  slack:
+    webhook_url: "${SLACK_WEBHOOK_URL}"
+    channel: "#alerts-personalization"
+    username: "Personalization Monitor"
+    icon_emoji: ":warning:"
+  
+  email:
+    smtp_host: "${SMTP_HOST}"
+    smtp_port: "${SMTP_PORT}"
+    username: "${SMTP_USERNAME}"
+    password: "${SMTP_PASSWORD}"
+    from: "alerts@thrifts.com"
+    to: ["sre@thrifts.com", "backend@thrifts.com"]
+  
+  pagerduty:
+    service_key: "${PAGERDUTY_SERVICE_KEY}"
+    escalation_policy: "personalization-critical"
