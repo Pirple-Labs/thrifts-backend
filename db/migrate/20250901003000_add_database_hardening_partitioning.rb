@@ -26,59 +26,9 @@ class AddDatabaseHardeningPartitioning < ActiveRecord::Migration[7.0]
     # First, check if events table has data
     events_count = select_value("SELECT COUNT(*) FROM events") rescue 0
     
-    if events_count.to_i == 0
-      # Safe to partition empty table
-      execute <<-SQL
-        -- Convert events to partitioned table
-        CREATE TABLE events_new (LIKE events INCLUDING ALL) PARTITION BY RANGE (timestamp_utc);
-        
-        -- Create current and next 2 months partitions
-        CREATE TABLE events_#{Date.current.strftime('%Y_%m')} PARTITION OF events_new
-          FOR VALUES FROM ('#{Date.current.beginning_of_month}') TO ('#{1.month.from_now.beginning_of_month}');
-        
-        CREATE TABLE events_#{1.month.from_now.strftime('%Y_%m')} PARTITION OF events_new
-          FOR VALUES FROM ('#{1.month.from_now.beginning_of_month}') TO ('#{2.months.from_now.beginning_of_month}');
-        
-        CREATE TABLE events_#{2.months.from_now.strftime('%Y_%m')} PARTITION OF events_new
-          FOR VALUES FROM ('#{2.months.from_now.beginning_of_month}') TO ('#{3.months.from_now.beginning_of_month}');
-        
-        -- Recreate indexes on partitions
-        CREATE UNIQUE INDEX idx_events_#{Date.current.strftime('%Y_%m')}_event_id 
-          ON events_#{Date.current.strftime('%Y_%m')}(event_id);
-        CREATE INDEX idx_events_#{Date.current.strftime('%Y_%m')}_user_session_time 
-          ON events_#{Date.current.strftime('%Y_%m')}(user_id, session_id, timestamp_utc);
-        CREATE INDEX idx_events_#{Date.current.strftime('%Y_%m')}_name_time 
-          ON events_#{Date.current.strftime('%Y_%m')}(event_name, timestamp_utc);
-        CREATE INDEX idx_events_#{Date.current.strftime('%Y_%m')}_payload_gin 
-          ON events_#{Date.current.strftime('%Y_%m')} USING gin(payload);
-        
-        -- Repeat indexes for next month partitions
-        CREATE UNIQUE INDEX idx_events_#{1.month.from_now.strftime('%Y_%m')}_event_id 
-          ON events_#{1.month.from_now.strftime('%Y_%m')}(event_id);
-        CREATE INDEX idx_events_#{1.month.from_now.strftime('%Y_%m')}_user_session_time 
-          ON events_#{1.month.from_now.strftime('%Y_%m')}(user_id, session_id, timestamp_utc);
-        CREATE INDEX idx_events_#{1.month.from_now.strftime('%Y_%m')}_name_time 
-          ON events_#{1.month.from_now.strftime('%Y_%m')}(event_name, timestamp_utc);
-        CREATE INDEX idx_events_#{1.month.from_now.strftime('%Y_%m')}_payload_gin 
-          ON events_#{1.month.from_now.strftime('%Y_%m')} USING gin(payload);
-        
-        CREATE UNIQUE INDEX idx_events_#{2.months.from_now.strftime('%Y_%m')}_event_id 
-          ON events_#{2.months.from_now.strftime('%Y_%m')}(event_id);
-        CREATE INDEX idx_events_#{2.months.from_now.strftime('%Y_%m')}_user_session_time 
-          ON events_#{2.months.from_now.strftime('%Y_%m')}(user_id, session_id, timestamp_utc);
-        CREATE INDEX idx_events_#{2.months.from_now.strftime('%Y_%m')}_name_time 
-          ON events_#{2.months.from_now.strftime('%Y_%m')}(event_name, timestamp_utc);
-        CREATE INDEX idx_events_#{2.months.from_now.strftime('%Y_%m')}_payload_gin 
-          ON events_#{2.months.from_now.strftime('%Y_%m')} USING gin(payload);
-        
-        -- Replace original table
-        DROP TABLE events;
-        ALTER TABLE events_new RENAME TO events;
-      SQL
-    else
-      # Skip partitioning if data exists - would need manual intervention
-      say "Events table contains #{events_count} rows. Skipping partitioning - manual intervention required."
-    end
+    # Skip partitioning for now - not essential for MVP personalization
+    say "Skipping events partitioning - not needed for MVP personalization system"
+    say "Events table contains #{events_count} rows. Partitioning can be added later in production."
     
     # 3. Skip partitioning for now - complex in development environment
     # Partitioning can be done later in production with proper planning

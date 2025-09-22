@@ -10,6 +10,11 @@ Rails.application.configure do
   # Allow ngrok (public tunnel) to hit our dev server for Daraja callbacks
   # Matches any subdomain like https://<random>.ngrok-free.app
   config.hosts << /[a-z0-9-]+\.ngrok-free\.app/
+  
+  # Allow Docker internal hosts for frontend development
+  config.hosts << "host.docker.internal"
+  config.hosts << "host.docker.internal:3000"
+  config.hosts << "host.docker.internal:5173"
 
   # Server timing headers
   config.server_timing = true

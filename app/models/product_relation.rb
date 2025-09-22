@@ -13,3 +13,6 @@ class ProductRelation < ApplicationRecord
   scope :for_region, ->(region) { where(region: region) }
   scope :high_confidence, -> { where('score >= ?', 0.7) }
 end
+
+
+

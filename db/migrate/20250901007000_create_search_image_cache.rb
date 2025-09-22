@@ -10,7 +10,7 @@ class CreateSearchImageCache < ActiveRecord::Migration[7.0]
       t.timestamps
     end
     
-    # Add vector column using SQL (Rails doesn't have native vector support)
+     # Add vector column using SQL (Rails doesn't have native vector support)
     execute "ALTER TABLE search_image_cache ADD COLUMN embedding vector(512)"
     
     # Indexes for performance

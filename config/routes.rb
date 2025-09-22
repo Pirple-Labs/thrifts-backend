@@ -43,6 +43,7 @@ Rails.application.routes.draw do
       resource :shop, only: [:create] do
         collection do
           get :my_shop
+          get :similar_public
         end
 
         member do
@@ -51,7 +52,11 @@ Rails.application.routes.draw do
         end
       end
 
-      resources :products, only: [:index, :create, :update, :destroy]
+      resources :products, only: [:index, :create, :update, :destroy] do
+        member do
+          post :publish  # NEW: Publish draft products
+        end
+      end
 
       # NEW: Product form options for enhanced metadata
       namespace :product_options do
@@ -64,6 +69,13 @@ Rails.application.routes.draw do
         member do
           patch :update_status
         end
+      end
+    end
+
+    # ────────── 📋 SCHEMAS (Dynamic Product Forms) ──────────
+    resources :schemas, only: [:index, :show, :create, :update] do
+      collection do
+        get :categories  # Get all available categories with schemas
       end
     end
 
@@ -105,21 +117,20 @@ Rails.application.routes.draw do
     # ────────── 📰 FEEDS (personalised) ──────────
     post "feeds/start", to: "feed#start"  # Api::FeedController#start
     post "feeds/next",  to: "feed#next"   # Api::FeedController#next
+    get "feeds/dynamic/:page", to: "feed#dynamic_feed"  # Api::FeedController#dynamic_feed
+    
+    # ────────── 🏠 PAGE-SPECIFIC LAYOUTS (Playbook-based) ──────────
+    get "home/grid", to: "feed#home_grid"  # Api::FeedController#home_grid
+    get "pdp/layout", to: "pdp#layout"  # Api::PdpController#layout
+    get "wishlist/layout", to: "wishlist#layout"  # Api::WishlistController#layout
+    get "checkout/layout", to: "checkout#layout"  # Api::CheckoutController#layout
+    get "profile/top-picks", to: "profile#top_picks"  # Api::ProfileController#top_picks
     
     # ────────── 🎯 PLAN DSL (v1.2) ──────────
     post "plan-dsl/start", to: "plan_dsl#start"  # Api::PlanDslController#start
     
     # ────────── 🎮 DEMO ──────────
     get "demo/personalized-feed", to: "demo#personalized_feed"  # Api::DemoController#personalized_feed
-    get "demo/personalized-feed/load-more", to: "demo#load_more_section"  # Api::DemoController#load_more_section
-    
-    # ────────── 🔍 SEARCH ──────────
-    get "demo/text-search", to: "demo#text_search"              # Api::DemoController#text_search
-    post "demo/image-search", to: "demo#image_search"           # Api::DemoController#image_search
-    get "demo/image-search-url", to: "demo#image_search_url"    # Api::DemoController#image_search_url
-    
-    # ────────── 🛍 PRODUCT DETAILS ──────────
-    get "products/:productId", to: "demo#show_product"          # Api::DemoController#show_product
 
     # ────────── 🔧 ADMIN (monitoring & management) ──────────
     namespace :admin do
