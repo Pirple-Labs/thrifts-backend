@@ -91,3 +91,6 @@ Thumbs.db
 
 # Coverage reports
 coverage/
+
+# Ignore documentation files
+docs/
