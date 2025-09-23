@@ -55,3 +55,8 @@ class ImageSearchPerformance < ApplicationRecord
     durations[index] || durations.last
   end
 end
+
+
+
+
+

@@ -11,3 +11,8 @@ class HintResolution < ApplicationRecord
   scope :for_request, ->(request_id) { where(request_id: request_id) }
   scope :recent, -> { where('created_at >= ?', 1.day.ago) }
 end
+
+
+
+
+

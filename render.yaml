@@ -1,0 +1,37 @@
+services:
+  - type: web
+    name: thrifts-backend
+    env: ruby
+    plan: starter
+    buildCommand: |
+      bundle install
+      bundle exec rails assets:precompile
+      bundle exec rails db:migrate
+    startCommand: bundle exec rails server -p $PORT
+    envVars:
+      - key: RAILS_ENV
+        value: production
+      - key: RAILS_MASTER_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: thrifts-db
+          property: connectionString
+      - key: RAILS_SERVE_STATIC_FILES
+        value: true
+      - key: RAILS_LOG_TO_STDOUT
+        value: true
+      - key: WEB_CONCURRENCY
+        value: 2
+      - key: RAILS_MAX_THREADS
+        value: 5
+      - key: SOLID_QUEUE_IN_PUMA
+        value: true
+
+  - type: pserv
+    name: thrifts-db
+    env: postgresql
+    plan: starter
+    region: oregon
+    databaseName: thrifts_production
+    databaseUser: thrifts_user

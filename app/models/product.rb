@@ -12,6 +12,50 @@ class Product < ApplicationRecord
   has_many :complementary_items,    through: :complementary_products, source: :complementary
 
   validates :stock, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
+  validates :status, inclusion: { in: %w[draft published archived] }
+  
+  # Schema-related methods
+  def schema
+    return nil unless schema_version
+    @schema ||= Schema.find_by(id: schema_version)
+  end
+  
+  def schema_product?
+    schema_version.present?
+  end
+  
+  def legacy_product?
+    schema_version.blank?
+  end
+  
+  def published?
+    status == 'published'
+  end
+  
+  def draft?
+    status == 'draft'
+  end
+  
+  def can_publish?
+    return false unless draft?
+    return true if legacy_product? # Legacy products can always be published
+    
+    # Schema products need validation
+    return false unless schema
+    SchemaValidator.new(schema).valid?(schema_attributes || {})
+  end
+  
+  def publish!
+    return false unless can_publish?
+    update!(status: 'published')
+  end
+  
+  def schema_validation_errors
+    return [] unless schema_product?
+    return ["Schema not found: #{schema_version}"] unless schema
+    
+    SchemaValidator.new(schema).validate(schema_attributes || {})
+  end
 
   after_create_commit :moderate_images!
   after_commit :enqueue_reembedding_if_relevant, on: %i[create update]

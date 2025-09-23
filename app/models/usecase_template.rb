@@ -8,3 +8,6 @@ class UsecaseTemplate < ApplicationRecord
 
   scope :for_template, ->(template_id) { where(template_id: template_id) }
 end
+
+
+

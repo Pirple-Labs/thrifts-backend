@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_09_08_130928) do
+ActiveRecord::Schema[8.0].define(version: 2025_09_16_000003) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -33,7 +33,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_08_130928) do
     t.index ["ts", "plan_id"], name: "idx_api_usage_date_plan"
     t.check_constraint "calls >= 0", name: "chk_api_usage_calls_positive"
     t.check_constraint "cpu_seconds >= 0::numeric", name: "chk_api_usage_cpu_positive"
-    t.check_constraint "endpoint::text = ANY (ARRAY['/api/feeds/start'::character varying, '/api/feeds/next'::character varying, '/api/events'::character varying]::text[])", name: "chk_api_usage_endpoint"
+    t.check_constraint "endpoint::text = ANY (ARRAY['/api/feeds/start'::character varying::text, '/api/feeds/next'::character varying::text, '/api/events'::character varying::text])", name: "chk_api_usage_endpoint"
     t.check_constraint "est_cost_usd >= 0::numeric", name: "chk_api_usage_cost_positive"
     t.check_constraint "gpu_seconds >= 0::numeric", name: "chk_api_usage_gpu_positive"
     t.check_constraint "tokens >= 0", name: "chk_api_usage_tokens_positive"
@@ -118,8 +118,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_08_130928) do
     t.index ["payload"], name: "index_events_on_payload_gin", using: :gin
     t.index ["user_id", "session_id", "timestamp_utc"], name: "index_events_on_user_session_time"
     t.index ["user_id"], name: "index_events_on_user_id"
-    t.check_constraint "page::text = ANY (ARRAY['home'::character varying, 'pdp'::character varying, 'profile'::character varying, 'cart'::character varying, 'checkout'::character varying, 'search'::character varying]::text[])", name: "chk_events_page"
-    t.check_constraint "schema_version::text = ANY (ARRAY['v1'::character varying, 'v2'::character varying]::text[])", name: "chk_events_schema_version"
+    t.check_constraint "page::text = ANY (ARRAY['home'::character varying::text, 'pdp'::character varying::text, 'profile'::character varying::text, 'cart'::character varying::text, 'checkout'::character varying::text, 'search'::character varying::text])", name: "chk_events_page"
+    t.check_constraint "schema_version::text = ANY (ARRAY['v1'::character varying::text, 'v2'::character varying::text])", name: "chk_events_schema_version"
     t.check_constraint "timestamp_utc <= (received_at + 'PT10M'::interval)", name: "chk_events_timestamp_reasonable"
   end
 
@@ -137,7 +137,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_08_130928) do
     t.index ["session_id", "assigned_at"], name: "idx_experiment_assignments_session_time"
     t.index ["user_id", "assigned_at"], name: "idx_experiment_assignments_user_time"
     t.index ["variant", "assigned_at"], name: "idx_experiment_assignments_variant_time"
-    t.check_constraint "variant::text = ANY (ARRAY['control'::character varying, 'operator'::character varying]::text[])", name: "check_assignments_variant"
+    t.check_constraint "variant::text = ANY (ARRAY['control'::character varying::text, 'operator'::character varying::text])", name: "check_assignments_variant"
   end
 
   create_table "experiments", force: :cascade do |t|
@@ -147,7 +147,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_08_130928) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["key"], name: "idx_experiments_key_unique", unique: true
-    t.check_constraint "status::text = ANY (ARRAY['draft'::character varying, 'running'::character varying, 'paused'::character varying, 'complete'::character varying]::text[])", name: "check_experiments_status"
+    t.check_constraint "status::text = ANY (ARRAY['draft'::character varying::text, 'running'::character varying::text, 'paused'::character varying::text, 'complete'::character varying::text])", name: "check_experiments_status"
     t.check_constraint "traffic_pct >= 0 AND traffic_pct <= 100", name: "check_experiments_traffic_pct"
   end
 
@@ -217,8 +217,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_08_130928) do
     t.index ["product_id"], name: "index_feed_items_on_product_id"
     t.index ["section", "position"], name: "idx_feed_items_section_position"
     t.check_constraint "\"position\" >= 0", name: "chk_feed_items_position_positive"
-    t.check_constraint "role::text = ANY (ARRAY['search'::character varying, 'trending'::character varying, 'similar'::character varying, 'image_search'::character varying, 'recommendation'::character varying, 'fallback'::character varying]::text[])", name: "chk_feed_items_role"
-    t.check_constraint "section::text = ANY (ARRAY['grid'::character varying, 'trending'::character varying, 'search_results'::character varying, 'recommendations'::character varying]::text[])", name: "chk_feed_items_section"
+    t.check_constraint "role::text = ANY (ARRAY['search'::character varying::text, 'trending'::character varying::text, 'similar'::character varying::text, 'image_search'::character varying::text, 'recommendation'::character varying::text, 'fallback'::character varying::text])", name: "chk_feed_items_role"
+    t.check_constraint "section::text = ANY (ARRAY['grid'::character varying::text, 'trending'::character varying::text, 'search_results'::character varying::text, 'recommendations'::character varying::text])", name: "chk_feed_items_section"
     t.check_constraint "vec_score >= 0::double precision AND vec_score <= 1::double precision", name: "chk_feed_items_vec_score_range"
   end
 
@@ -250,7 +250,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_08_130928) do
     t.check_constraint "is_cache_hit = ANY (ARRAY[true, false])", name: "chk_feeds_is_cache_hit"
     t.check_constraint "page::text = ANY (ARRAY['home'::character varying::text, 'pdp'::character varying::text, 'profile'::character varying::text, 'cart'::character varying::text, 'checkout'::character varying::text, 'search'::character varying::text])", name: "chk_feeds_page"
     t.check_constraint "ttl_seconds > 0", name: "chk_feeds_ttl_positive"
-    t.check_constraint "variant::text = ANY (ARRAY['control'::character varying, 'operator'::character varying, 'llm'::character varying]::text[])", name: "check_feeds_variant"
+    t.check_constraint "variant::text = ANY (ARRAY['control'::character varying::text, 'operator'::character varying::text, 'llm'::character varying::text])", name: "check_feeds_variant"
   end
 
   create_table "hint_resolutions", force: :cascade do |t|
@@ -380,9 +380,34 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_08_130928) do
     t.check_constraint "requests >= 0", name: "chk_plan_metrics_requests_positive"
   end
 
-# Could not dump table "product_embeddings" because of following StandardError
-#   Unknown type 'vector(1536)' for column 'embedding'
-
+  create_table "playbooks", force: :cascade do |t|
+    t.string "playbook_id", null: false
+    t.bigint "user_id"
+    t.string "cohort_id"
+    t.string "page", null: false
+    t.integer "valid_for_hours", default: 48, null: false
+    t.datetime "generated_at", null: false
+    t.boolean "ai_generated", default: true, null: false
+    t.json "content", null: false
+    t.json "user_context"
+    t.json "ai_instructions"
+    t.string "ai_model_version"
+    t.string "ai_prompt_version"
+    t.decimal "generation_cost_usd", precision: 10, scale: 4
+    t.integer "generation_duration_ms"
+    t.text "generation_log"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["ai_generated", "generated_at"], name: "idx_playbooks_ai_generated_time"
+    t.index ["cohort_id", "page", "generated_at"], name: "idx_playbooks_cohort_page_time"
+    t.index ["cohort_id"], name: "index_playbooks_on_cohort_id"
+    t.index ["generated_at"], name: "index_playbooks_on_generated_at"
+    t.index ["page", "generated_at"], name: "idx_playbooks_page_time"
+    t.index ["page"], name: "index_playbooks_on_page"
+    t.index ["playbook_id"], name: "index_playbooks_on_playbook_id", unique: true
+    t.index ["user_id", "page", "generated_at"], name: "idx_playbooks_user_page_time"
+    t.index ["user_id"], name: "index_playbooks_on_user_id"
+  end
 
   create_table "product_relation_overrides", force: :cascade do |t|
     t.bigint "seed_id", null: false
@@ -467,6 +492,9 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_08_130928) do
     t.string "use_case"
     t.jsonb "specifications", default: {}
     t.string "seasonality"
+    t.jsonb "schema_attributes", default: {}
+    t.string "schema_version"
+    t.string "status", default: "draft"
     t.index "to_tsvector('english'::regconfig, (((((((COALESCE(name, ''::character varying))::text || ' '::text) || COALESCE(description, ''::text)) || ' '::text) || (COALESCE(color, ''::character varying))::text) || ' '::text) || (COALESCE(size, ''::character varying))::text))", name: "idx_products_bm25_search", using: :gin
     t.index ["brand_id"], name: "index_products_on_brand_id"
     t.index ["category_id"], name: "index_products_on_category_id"
@@ -474,9 +502,13 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_08_130928) do
     t.index ["material"], name: "index_products_on_material"
     t.index ["moderation_status", "stock", "pickup_ready"], name: "idx_products_search_composite", where: "(((moderation_status)::text = 'approved'::text) AND (stock > 0))"
     t.index ["name"], name: "idx_products_name_trgm", opclass: :gin_trgm_ops, using: :gin
+    t.index ["schema_attributes"], name: "index_products_on_schema_attributes", using: :gin
+    t.index ["schema_version"], name: "index_products_on_schema_version"
     t.index ["seasonality"], name: "index_products_on_seasonality"
     t.index ["shop_id"], name: "index_products_on_shop_id"
     t.index ["specifications"], name: "index_products_on_specifications", using: :gin
+    t.index ["status", "schema_version"], name: "index_products_on_status_and_schema_version"
+    t.index ["status"], name: "index_products_on_status"
     t.index ["style"], name: "index_products_on_style"
     t.index ["subcategory"], name: "index_products_on_subcategory"
     t.index ["use_case"], name: "index_products_on_use_case"
@@ -494,9 +526,18 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_08_130928) do
     t.index ["user_id"], name: "index_recommended_products_on_user_id"
   end
 
-# Could not dump table "search_image_cache" because of following StandardError
-#   Unknown type 'vector(512)' for column 'embedding'
-
+  create_table "schemas", id: :string, force: :cascade do |t|
+    t.string "category", null: false
+    t.jsonb "schema_json", null: false
+    t.string "version", null: false
+    t.boolean "active", default: true
+    t.text "description"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["active"], name: "index_schemas_on_active"
+    t.index ["category"], name: "index_schemas_on_category"
+    t.index ["schema_json"], name: "index_schemas_on_schema_json", using: :gin
+  end
 
   create_table "shops", force: :cascade do |t|
     t.string "name"
@@ -544,7 +585,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_08_130928) do
     t.index ["computed_at"], name: "idx_user_profiles_computed_at"
     t.index ["user_id", "version"], name: "index_user_profiles_on_user_id_and_version", unique: true
     t.index ["user_id"], name: "index_user_profiles_on_user_id"
-    t.check_constraint "version::text = ANY (ARRAY['up_v1'::character varying, 'up_v2'::character varying]::text[])", name: "chk_user_profiles_version"
+    t.check_constraint "version::text = ANY (ARRAY['up_v1'::character varying::text, 'up_v2'::character varying::text])", name: "chk_user_profiles_version"
   end
 
   create_table "users", force: :cascade do |t|
@@ -614,24 +655,5 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_08_130928) do
   add_foreign_key "orders", "shops"
   add_foreign_key "orders", "users"
   add_foreign_key "payments", "users"
-  add_foreign_key "product_embeddings", "products"
-  add_foreign_key "product_relation_overrides", "products", column: "cand_id"
-  add_foreign_key "product_relation_overrides", "products", column: "seed_id"
-  add_foreign_key "product_relations", "products", column: "cand_id"
-  add_foreign_key "product_relations", "products", column: "seed_id"
-  add_foreign_key "product_relationships", "products"
-  add_foreign_key "product_relationships", "products", column: "related_product_id"
-  add_foreign_key "product_variants", "products"
-  add_foreign_key "products", "brands"
-  add_foreign_key "products", "categories"
-  add_foreign_key "products", "shops"
-  add_foreign_key "recommended_products", "products"
-  add_foreign_key "recommended_products", "users"
-  add_foreign_key "shops", "users"
-  add_foreign_key "similar_products", "products"
-  add_foreign_key "similar_products", "products", column: "similar_product_id"
-  add_foreign_key "user_profiles", "users"
-  add_foreign_key "wishlist_items", "products"
-  add_foreign_key "wishlist_items", "users"
-  add_foreign_key "withdrawal_requests", "merchant_wallets"
+  add_foreign_key "playbooks", "users"
 end

@@ -2,15 +2,34 @@ default: &default
   adapter: postgresql
   encoding: unicode
   pool: 5
-  username: thrifts_user
-  password: '123456'
-  host: 127.0.0.1
-  port: 5433
 
+# Docker development configuration
 development:
   <<: *default
+  database: thrifts_backend_development
+  username: postgres
+  password: password
+  host: <%= ENV.fetch("DATABASE_HOST", "db") %>
+  port: <%= ENV.fetch("DATABASE_PORT", "5432") %>
+
+# Local development configuration (fallback)
+development_local:
+  <<: *default
   database: thrifts_backend_dev
+  username: thrifts_user
+  password: '123456'
+  host: 172.17.234.141
+  port: 5433
 
 test:
   <<: *default
   database: thrifts_backend_test
+  username: postgres
+  password: password
+  host: <%= ENV.fetch("DATABASE_HOST", "db") %>
+  port: <%= ENV.fetch("DATABASE_PORT", "5432") %>
+
+production:
+  <<: *default
+  url: <%= ENV['DATABASE_URL'] %>
+  pool: <%= ENV.fetch("RAILS_MAX_THREADS", 5) %>

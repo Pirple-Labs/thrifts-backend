@@ -25,7 +25,7 @@ module Personalization
       
       if resp.status.success?
         json = resp.parse
-        return json
+        return validate_and_process_ai_response(json, page)
       end
       
       # Optional single retry on 5xx if time allows
@@ -48,6 +48,33 @@ module Personalization
     def self.build_payload(page, snapshot, profile, session_embed_summary, constraints)
       {
         page: page,
+        snapshot: snapshot,
+        profile: profile,
+        session_embed_summary: session_embed_summary,
+        constraints: constraints,
+        # Enhanced context for AI
+        user_context: {
+          user_id: snapshot[:user_id],
+          session_id: snapshot[:session_id],
+          page: snapshot[:page],
+          region: snapshot[:region],
+          timestamp: snapshot[:timestamp],
+          behavioral_patterns: snapshot[:behavioral_patterns],
+          micro_events: snapshot[:micro_events],
+          meso_events: snapshot[:meso_events],
+          macro_events: snapshot[:macro_events]
+        },
+        # AI instruction context
+        ai_instructions: {
+          task: "generate_personalized_sections",
+          requirements: {
+            dynamic_sections: true,
+            personalized_titles: true,
+            search_strategies: true,
+            max_sections: 5,
+            section_types: ["trending", "similar", "complementary", "discovery", "completion"]
+          }
+        },
         snapshot: normalize_snapshot(snapshot),
         profile: profile,
         constraints: constraints,
@@ -139,6 +166,64 @@ module Personalization
       # Could integrate with PagerDuty, Slack, etc.
     end
     
+    def self.validate_and_process_ai_response(json, page)
+      # Validate AI response structure
+      unless json.is_a?(Hash) && json["sections"].is_a?(Array)
+        Rails.logger.warn("Invalid AI response structure: #{json}")
+        return control_plan(page)
+      end
+
+      # Process and validate each section
+      processed_sections = json["sections"].map do |section|
+        validate_section(section)
+      end.compact
+
+      # Ensure we have at least one valid section
+      if processed_sections.empty?
+        Rails.logger.warn("No valid sections in AI response")
+        return control_plan(page)
+      end
+
+      # Add metadata
+      {
+        sections: processed_sections,
+        metadata: {
+          ai_generated: true,
+          timestamp: Time.current.iso8601,
+          page: page,
+          section_count: processed_sections.count
+        }
+      }
+    end
+
+    def self.validate_section(section)
+      # Validate required fields
+      required_fields = %w[id title type]
+      missing_fields = required_fields - section.keys
+      
+      if missing_fields.any?
+        Rails.logger.warn("Section missing required fields #{missing_fields}: #{section}")
+        return nil
+      end
+
+      # Validate section type
+      valid_types = %w[trending similar complementary discovery completion personalized]
+      unless valid_types.include?(section["type"])
+        Rails.logger.warn("Invalid section type '#{section['type']}': #{section}")
+        return nil
+      end
+
+      # Ensure filters and knobs are hashes
+      section["filters"] ||= {}
+      section["knobs"] ||= {}
+
+      # Add default knobs if missing
+      section["knobs"]["limit"] ||= 20
+      section["knobs"]["algorithm"] ||= "default"
+
+      section
+    end
+
     def self.control_plan(page)
       ControlPlan.for(page)
     end
