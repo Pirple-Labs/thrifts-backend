@@ -93,4 +93,4 @@ Thumbs.db
 coverage/
 
 # Ignore documentation files
-docs/
+/docs/
